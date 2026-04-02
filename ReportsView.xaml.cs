@@ -5,178 +5,273 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace e_learning_app.Views
 {
     public partial class ReportsView : UserControl
     {
-        // ─── Models ──────────────────────────────────────────────────
+        // ── Models ───────────────────────────────────────────────────
         public class ClassReport
         {
-            public string Subject      { get; set; }
-            public string ClassName    { get; set; }
-            public string AccentColor  { get; set; }
-            public int    StudentCount { get; set; }
-            public double AvgScore     { get; set; }
-            public double PassRate     { get; set; }   // %
-            public double ExcellentRate{ get; set; }   // %
-            public string Semester     { get; set; }
+            public string Subject { get; set; }
+            public string ClassName { get; set; }
+            public string AccentColor { get; set; }
+            public int StudentCount { get; set; }
+            public double AvgScore { get; set; }
+            public double PassRate { get; set; }
+            public double ExcelRate { get; set; }
         }
 
-        public class StudentRank
-        {
-            public int    Rank        { get; set; }
-            public string Name        { get; set; }
-            public string ClassName   { get; set; }
-            public double AvgScore    { get; set; }
-            public string Medal       { get; set; }
-        }
+        public class TopStudent { public string Medal, Name, ClassName; public double Avg; }
 
-        public class ScoreDistribution
-        {
-            public string Range  { get; set; }
-            public int    Count  { get; set; }
-            public double Pct    { get; set; }
-            public string Color  { get; set; }
-        }
+        public class ScoreBand { public string Range, Color; public int Count; public double Pct; }
 
-        // ─── State ───────────────────────────────────────────────────
-        private List<ClassReport>       _reports      = new();
-        private List<StudentRank>       _topStudents  = new();
-        private List<ScoreDistribution> _distribution = new();
-        private string _currentSemester = "Học kỳ 2 – 2024";
+        // ── Data ─────────────────────────────────────────────────────
+        private List<ClassReport> _reports = new();
+        private List<TopStudent> _top = new();
+        private List<ScoreBand> _distribution = new();
+        private string _semester = "Học kỳ 2 – 2024";
 
-        // ─── Constructor ─────────────────────────────────────────────
-        public ReportsView()
-        {
-            InitializeComponent();
-            LoadData();
-        }
+        // ── Constructor ──────────────────────────────────────────────
+        public ReportsView() { InitializeComponent(); LoadData(); }
 
-        // ─── Data loading ─────────────────────────────────────────────
+        private void UserControl_Loaded(object sender, RoutedEventArgs e) => Refresh();
+
+        // ── Data ─────────────────────────────────────────────────────
         private void LoadData()
         {
-            _reports = new List<ClassReport>
+            _reports = new()
             {
-                new() { Subject="Toán Giải Tích",    ClassName="12A1", AccentColor="#3B82F6",
-                        StudentCount=38, AvgScore=7.9, PassRate=89, ExcellentRate=24, Semester="Học kỳ 2 – 2024" },
-                new() { Subject="Vật Lý Đại Cương",  ClassName="11B3", AccentColor="#8B5CF6",
-                        StudentCount=42, AvgScore=7.4, PassRate=83, ExcellentRate=19, Semester="Học kỳ 2 – 2024" },
-                new() { Subject="Hóa Hữu Cơ",        ClassName="12C2", AccentColor="#F59E0B",
-                        StudentCount=35, AvgScore=8.1, PassRate=91, ExcellentRate=28, Semester="Học kỳ 2 – 2024" },
-                new() { Subject="Sinh Học Phân Tử",   ClassName="11A2", AccentColor="#10B981",
-                        StudentCount=40, AvgScore=7.6, PassRate=85, ExcellentRate=20, Semester="Học kỳ 2 – 2024" },
+                new() { Subject="Toán Giải Tích",   ClassName="12A1", AccentColor="#3B82F6", StudentCount=38, AvgScore=7.9, PassRate=89, ExcelRate=24 },
+                new() { Subject="Vật Lý Đại Cương", ClassName="11B3", AccentColor="#8B5CF6", StudentCount=42, AvgScore=7.4, PassRate=83, ExcelRate=19 },
+                new() { Subject="Hóa Hữu Cơ",       ClassName="12C2", AccentColor="#F59E0B", StudentCount=35, AvgScore=8.1, PassRate=91, ExcelRate=28 },
+                new() { Subject="Sinh Học Phân Tử",  ClassName="11A2", AccentColor="#10B981", StudentCount=40, AvgScore=7.6, PassRate=85, ExcelRate=20 },
             };
-
-            _topStudents = new List<StudentRank>
+            _top = new()
             {
-                new() { Rank=1, Name="Nguyễn Minh Anh",  ClassName="12A1", AvgScore=9.7, Medal="🥇" },
-                new() { Rank=2, Name="Trần Bảo Châu",    ClassName="12C2", AvgScore=9.4, Medal="🥈" },
-                new() { Rank=3, Name="Lê Quốc Hùng",     ClassName="11B3", AvgScore=9.2, Medal="🥉" },
-                new() { Rank=4, Name="Phạm Thị Lan",     ClassName="11A2", AvgScore=9.0, Medal="" },
-                new() { Rank=5, Name="Đỗ Minh Tuấn",     ClassName="12A1", AvgScore=8.9, Medal="" },
+                new() { Medal="🥇", Name="Nguyễn Minh Anh",  ClassName="12A1", Avg=9.7 },
+                new() { Medal="🥈", Name="Trần Bảo Châu",    ClassName="12C2", Avg=9.4 },
+                new() { Medal="🥉", Name="Lê Quốc Hùng",     ClassName="11B3", Avg=9.2 },
             };
-
-            _distribution = new List<ScoreDistribution>
+            _distribution = new()
             {
-                new() { Range="9–10",  Count=55,  Pct=22, Color="#22C55E" },
-                new() { Range="7–8.9", Count=89,  Pct=36, Color="#3B82F6" },
-                new() { Range="5–6.9", Count=69,  Pct=28, Color="#F59E0B" },
-                new() { Range="3–4.9", Count=22,  Pct=9,  Color="#FB923C" },
-                new() { Range="0–2.9", Count=12,  Pct=5,  Color="#EF4444" },
+                new() { Range="9–10",  Color="#22C55E", Count=55,  Pct=22 },
+                new() { Range="7–8.9", Color="#3B82F6", Count=89,  Pct=36 },
+                new() { Range="5–6.9", Color="#F59E0B", Count=69,  Pct=28 },
+                new() { Range="3–4.9", Color="#FB923C", Count=22,  Pct=9  },
+                new() { Range="0–2.9", Color="#EF4444", Count=12,  Pct=5  },
             };
         }
 
-        // ─── Computed summary ─────────────────────────────────────────
-        private double OverallAvg   => _reports.Any() ? _reports.Average(r => r.AvgScore)      : 0;
-        private double OverallPass  => _reports.Any() ? _reports.Average(r => r.PassRate)      : 0;
-        private double OverallExcel => _reports.Any() ? _reports.Average(r => r.ExcellentRate) : 0;
-        private int    TotalStudents=> _reports.Sum(r => r.StudentCount);
-        private int    WeakStudents => _distribution.Where(d => d.Range is "3–4.9" or "0–2.9").Sum(d => d.Count);
+        // ── Refresh ──────────────────────────────────────────────────
+        private void Refresh()
+        {
+            int total = _reports.Sum(r => r.StudentCount);
+            if (total == 0) return;
 
-        // ─── Event handlers ──────────────────────────────────────────
+            double avg = _reports.Average(r => r.AvgScore);
+            double pass = _reports.Average(r => r.PassRate);
+            double excel = _reports.Average(r => r.ExcelRate);
+            int passing = (int)(total * pass / 100);
+            int weak = _distribution.Where(d => d.Range is "3–4.9" or "0–2.9").Sum(d => d.Count);
 
-        /// <summary>Chọn học kỳ từ dropdown.</summary>
-        private void SemesterSelector_Click(object sender, RoutedEventArgs e)
+            // Summary cards
+            TxtOverallAvg.Text = avg.ToString("0.00");
+            TxtAvgNote.Text = avg >= 7.5 ? "Trên mức kỳ vọng (7.5) ✓" : "Dưới mức kỳ vọng (7.5)";
+            TxtAvgNote.Foreground = avg >= 7.5
+                ? new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E))
+                : new SolidColorBrush(Color.FromRgb(0xEF, 0x44, 0x44));
+
+            TxtPassRate.Text = $"{pass:0.0}%";
+            TxtPassNote.Text = $"{passing} / {total} học sinh đạt";
+
+            TxtExcelRate.Text = $"{excel:0.0}%";
+            TxtExcelNote.Text = $"{_distribution.FirstOrDefault(d => d.Range == "9–10")?.Count ?? 0} học sinh điểm ≥ 9.0";
+
+            double weakPct = _distribution.Where(d => d.Range is "3–4.9" or "0–2.9").Sum(d => d.Pct);
+            TxtWeakRate.Text = $"{weakPct:0.0}%";
+            TxtWeakNote.Text = $"{weak} học sinh cần hỗ trợ";
+
+            // Table rows
+            TableRowsPanel.Children.Clear();
+            foreach (var r in _reports)
+            {
+                var sep = new Separator { Background = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9)) };
+                TableRowsPanel.Children.Add(sep);
+                TableRowsPanel.Children.Add(BuildTableRow(r));
+            }
+
+            // Distribution bars
+            DistributionPanel.Children.Clear();
+            double maxPct = _distribution.Max(d => d.Pct);
+            foreach (var b in _distribution)
+                DistributionPanel.Children.Add(BuildDistRow(b, maxPct));
+
+            // Top students
+            TopStudentsPanel.Children.Clear();
+            foreach (var s in _top)
+                TopStudentsPanel.Children.Add(BuildTopStudentRow(s));
+        }
+
+        // ── Row builders ─────────────────────────────────────────────
+        private UIElement BuildTableRow(ClassReport r)
+        {
+            var grid = new Grid { Height = 46 };
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
+            for (int i = 0; i < 4; i++) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(i == 3 ? 80 : 70) });
+
+            var dot = new Border
+            {
+                Width = 8,
+                Height = 8,
+                CornerRadius = new CornerRadius(4),
+                Background = (Brush)new BrushConverter().ConvertFromString(r.AccentColor)!,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            var nameWrap = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 0, 0) };
+            nameWrap.Children.Add(dot);
+            nameWrap.Children.Add(new TextBlock { Text = $"{r.Subject} – {r.ClassName}", FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B)) });
+            Grid.SetColumn(nameWrap, 0);
+
+            TextBlock Num(int col, string text, Brush fg)
+            {
+                var tb = new TextBlock { Text = text, FontSize = 13, Foreground = fg, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+                Grid.SetColumn(tb, col); return tb;
+            }
+            var btnDetail = new Button
+            {
+                Content = "↗",
+                Tag = r.ClassName,
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6)),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                FontSize = 14
+            };
+            btnDetail.Click += BtnViewDetail_Click;
+            Grid.SetColumn(btnDetail, 4);
+
+            grid.Children.Add(nameWrap);
+            grid.Children.Add(Num(1, r.StudentCount.ToString(), new SolidColorBrush(Color.FromRgb(0x47, 0x55, 0x69))));
+            grid.Children.Add(Num(2, r.AvgScore.ToString("0.0"), new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B))));
+            grid.Children.Add(Num(3, $"{r.PassRate:0}%", new SolidColorBrush(Color.FromRgb(0x16, 0xA3, 0x4A))));
+            grid.Children.Add(btnDetail);
+            return grid;
+        }
+
+        private UIElement BuildDistRow(ScoreBand b, double maxPct)
+        {
+            var grid = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(55) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
+
+            Grid.SetColumn(new TextBlock { Text = b.Range, FontSize = 12, Foreground = new SolidColorBrush(Color.FromRgb(0x47, 0x55, 0x69)), VerticalAlignment = VerticalAlignment.Center }, 0);
+            var barBg = new Border { Background = new SolidColorBrush(Color.FromRgb(0xE2, 0xE8, 0xF0)), CornerRadius = new CornerRadius(3), Height = 22 };
+            var barFg = new Border
+            {
+                Background = (Brush)new BrushConverter().ConvertFromString(b.Color)!,
+                CornerRadius = new CornerRadius(3),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Width = double.IsNaN(maxPct) || maxPct == 0 ? 0 : (b.Pct / maxPct) * 200
+            };
+            var barGrid = new Grid(); barGrid.Children.Add(barBg); barGrid.Children.Add(barFg);
+            Grid.SetColumn(barGrid, 1);
+            var pct = new TextBlock
+            {
+                Text = $"{b.Pct}%",
+                FontSize = 11,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush)new BrushConverter().ConvertFromString(b.Color)!,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            Grid.SetColumn(pct, 2);
+
+            var lbl = new TextBlock { Text = b.Range, FontSize = 12, Foreground = new SolidColorBrush(Color.FromRgb(0x47, 0x55, 0x69)), VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(lbl, 0);
+            grid.Children.Add(lbl); grid.Children.Add(barGrid); grid.Children.Add(pct);
+            return grid;
+        }
+
+        private UIElement BuildTopStudentRow(TopStudent s)
+        {
+            var sp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+            var icon = new Border
+            {
+                Width = 28,
+                Height = 28,
+                CornerRadius = new CornerRadius(14),
+                Background = new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7))
+            };
+            icon.Child = new TextBlock { Text = s.Medal, FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            var info = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
+            info.Children.Add(new TextBlock { Text = $"{s.Name} – {s.ClassName}", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B)) });
+            info.Children.Add(new TextBlock { Text = $"Điểm TB: {s.Avg:0.0}", FontSize = 11, Foreground = new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)) });
+            sp.Children.Add(icon); sp.Children.Add(info);
+            return sp;
+        }
+
+        // ── Event handlers ───────────────────────────────────────────
+        private void BtnSemester_Click(object sender, RoutedEventArgs e)
         {
             var menu = new ContextMenu();
-            foreach (var sem in new[] { "Học kỳ 2 – 2024", "Học kỳ 1 – 2024", "Học kỳ 2 – 2023" })
+            foreach (var s in new[] { "Học kỳ 2 – 2024", "Học kỳ 1 – 2024", "Học kỳ 2 – 2023" })
             {
-                var item = new MenuItem { Header = sem };
-                item.Click += (_, _) =>
-                {
-                    _currentSemester = sem;
-                    // TxtCurrentSemester.Text = sem;
-                    // LoadData for the semester, then refresh
-                    RefreshUI();
-                };
+                var item = new MenuItem { Header = s };
+                item.Click += (_, _) => { _semester = s; TxtSemesterLabel.Text = $"  {s}"; Refresh(); };
                 menu.Items.Add(item);
             }
             menu.PlacementTarget = sender as UIElement;
             menu.IsOpen = true;
         }
 
-        private void RefreshUI()
-        {
-            // In a full implementation: rebind TextBlocks and re-render bars
-            // For now, the XAML static content reflects the loaded data
-        }
-
-        /// <summary>Xuất báo cáo ra file CSV.</summary>
         private void BtnExportReport_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Microsoft.Win32.SaveFileDialog
             {
-                FileName   = $"BaoCao_{_currentSemester.Replace(" ","_").Replace("–","")}.csv",
+                FileName = $"BaoCao_{_semester.Replace(" ", "_").Replace("–", "")}.csv",
                 DefaultExt = ".csv",
-                Filter     = "CSV files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx"
+                Filter = "CSV (*.csv)|*.csv"
             };
             if (dlg.ShowDialog() != true) return;
-
             try
             {
-                var sb = new StringBuilder();
-                sb.AppendLine("Môn học,Lớp,Sĩ số,Điểm TB,Tỷ lệ đạt,Tỷ lệ xuất sắc,Học kỳ");
+                var sb = new StringBuilder("Môn học,Lớp,Sĩ số,Điểm TB,Đạt,Xuất sắc\n");
                 foreach (var r in _reports)
-                    sb.AppendLine($"{r.Subject},{r.ClassName},{r.StudentCount},{r.AvgScore:0.0},{r.PassRate}%,{r.ExcellentRate}%,{r.Semester}");
-
-                sb.AppendLine();
-                sb.AppendLine("=== TOP HỌC SINH ===");
-                sb.AppendLine("Hạng,Tên học sinh,Lớp,Điểm TB");
-                foreach (var s in _topStudents)
-                    sb.AppendLine($"{s.Rank},{s.Name},{s.ClassName},{s.AvgScore:0.0}");
-
+                    sb.AppendLine($"{r.Subject},{r.ClassName},{r.StudentCount},{r.AvgScore:0.0},{r.PassRate:0}%,{r.ExcelRate:0}%");
                 File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
-                MessageBox.Show($"Đã xuất báo cáo thành công!\n{dlg.FileName}",
-                                "Xuất báo cáo", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Đã xuất: {dlg.FileName}", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi xuất file: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            catch (Exception ex) { MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
-        /// <summary>Click "Xem chi tiết" trong bảng điểm.</summary>
+        private void BtnPrint_Click(object sender, RoutedEventArgs e)
+        {
+            var pd = new PrintDialog();
+            if (pd.ShowDialog() == true) pd.PrintVisual(this, $"Báo cáo {_semester}");
+        }
+
         private void BtnViewDetail_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button btn) return;
-            string className = btn.Tag?.ToString() ?? "";
-            var report = _reports.FirstOrDefault(r => r.ClassName == className);
-            if (report == null) return;
-
-            var msg = $"Chi tiết lớp: {report.Subject} – {report.ClassName}\n" +
-                      $"Sĩ số: {report.StudentCount}  |  Điểm TB: {report.AvgScore:0.0}\n" +
-                      $"Tỷ lệ đạt: {report.PassRate}%  |  Xuất sắc: {report.ExcellentRate}%\n\n" +
-                      "(Tích hợp StudentDetailView tại đây)";
-            MessageBox.Show(msg, "Chi tiết lớp", MessageBoxButton.OK, MessageBoxImage.Information);
+            string cls = btn.Tag?.ToString() ?? "";
+            var r = _reports.FirstOrDefault(x => x.ClassName == cls);
+            if (r == null) return;
+            MessageBox.Show(
+                $"Lớp: {r.Subject} – {r.ClassName}\nSĩ số: {r.StudentCount}  |  Điểm TB: {r.AvgScore:0.0}\n" +
+                $"Tỷ lệ đạt: {r.PassRate:0}%  |  Xuất sắc: {r.ExcelRate:0}%",
+                "Chi tiết lớp", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        /// <summary>In báo cáo (PrintDialog).</summary>
-        private void BtnPrint_Click(object sender, RoutedEventArgs e)
+        private void BtnViewAllClasses_Click(object sender, RoutedEventArgs e)
         {
-            var printDlg = new PrintDialog();
-            if (printDlg.ShowDialog() == true)
-                printDlg.PrintVisual(this, $"Báo cáo {_currentSemester}");
+            if (Window.GetWindow(this) is MainWindow mw)
+                mw.NavigateTo(new MyClassesView());
         }
     }
 }
