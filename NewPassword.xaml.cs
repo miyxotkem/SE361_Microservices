@@ -8,18 +8,21 @@ namespace e_learning_app
 {
     public partial class NewPassword : UserControl
     {
+        private ProfileManage _mainProfile;
         private DatabaseManager _dbManager;
 
         public NewPassword()
         {
             InitializeComponent();
+            _mainProfile = new ProfileManage();
             _dbManager = new DatabaseManager();
         }
 
-        public NewPassword(DatabaseManager dbManager)
+        public NewPassword(ProfileManage mainProfile, DatabaseManager dbManager)
         {
             InitializeComponent();
             _dbManager = dbManager;
+            _mainProfile = mainProfile;
         }
 
         private async void btnUpdate_Click(object sender, RoutedEventArgs e)
@@ -37,6 +40,7 @@ namespace e_learning_app
                     {
                         await _dbManager.UpdateFullProfile(user.Id, user);
                         MessageBox.Show("Password updated successfully!");
+                        _mainProfile.ClosePasswordView();
                     }
                     catch (Exception ex)
                     {

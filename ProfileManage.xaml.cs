@@ -48,12 +48,21 @@ namespace e_learning_app
 
         private void btnChangePassword_Click(object sender, RoutedEventArgs e)
         {
-            PasswordViewContainer.Content = new CurrentPassword(this, dbManager);
+            MainProfileUI.Visibility = Visibility.Collapsed;
+            FullScreenOverlay.Visibility = Visibility.Visible;
+            FullScreenOverlay.Content = new CurrentPassword(this, dbManager);
         }
 
         public void ShowNewPasswordView()
         {
-            PasswordViewContainer.Content = new NewPassword(dbManager);
+            FullScreenOverlay.Content = new NewPassword(this, dbManager);
+        }
+
+        public void ClosePasswordView()
+        {
+            FullScreenOverlay.Visibility = Visibility.Collapsed;
+            MainProfileUI.Visibility = Visibility.Visible;
+            FullScreenOverlay.Content = null;
         }
 
         private async void btnSave_Click(object sender, RoutedEventArgs e)
