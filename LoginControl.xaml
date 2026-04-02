@@ -1,0 +1,55 @@
+﻿<UserControl x:Class="e_learning_app.LoginControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             d:DesignHeight="500" d:DesignWidth="400">
+
+    <StackPanel VerticalAlignment="Center">
+        <TextBlock Text="Đăng nhập" FontSize="32" FontWeight="Bold" Foreground="{StaticResource TextDark}" Margin="0,0,0,10"/>
+        <TextBlock Text="Nhập thông tin tài khoản của bạn bên dưới." FontSize="14" Foreground="{StaticResource TextMuted}" Margin="0,0,0,40"/>
+
+        <TextBlock Text="Email" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{StaticResource TextDark}"/>
+        <Border Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="15,10" Margin="0,0,0,20">
+            <TextBox x:Name="txtEmail" Background="Transparent" BorderThickness="0" FontSize="14" VerticalAlignment="Center" />
+        </Border>
+
+        <Grid>
+            <TextBlock Text="Mật khẩu" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{StaticResource TextDark}"/>
+            <TextBlock Text="Quên mật khẩu?" 
+                       Foreground="{StaticResource PrimaryBlue}" 
+                       FontSize="12" HorizontalAlignment="Right" 
+                       Cursor="Hand" VerticalAlignment="Center"
+                       MouseDown="ForgotPassword_click"/>
+        </Grid>
+        <Border Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="15,10" Margin="0,8,0,10">
+            <PasswordBox KeyDown="login_enter" x:Name="txtPassword" Background="Transparent" BorderThickness="0" FontSize="14" VerticalAlignment="Center" />
+        </Border>
+        <TextBlock x:Name="txtstatus" FontWeight="Bold" Foreground="Red" Margin="0,0,0,10"/>
+
+        <Grid Margin="0,10,0,30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Content="Đăng nhập" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,7,0" Click="Login_Click">
+                <Button.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.15" Color="#3B82F6"/>
+                </Button.Effect>
+            </Button>
+
+            <Button x:Name="btnLogin" Grid.Column="1" Style="{StaticResource GoogleButtonStyle}" Margin="7,0,0,0" Click="login_google">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="G" Foreground="#EA4335" FontWeight="Bold" FontSize="18" Margin="0,0,8,0"/>
+                    <TextBlock Text="Google" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <TextBlock Text="Chưa có tài khoản?" Foreground="{StaticResource TextMuted}"/>
+            <TextBlock Text=" Đăng ký" Foreground="{StaticResource PrimaryBlue}" FontWeight="Bold" Margin="5,0,0,0" Cursor="Hand" MouseDown="GoToRegister_Click"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

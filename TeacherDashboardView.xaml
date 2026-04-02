@@ -1,0 +1,409 @@
+﻿<UserControl x:Class="e_learning_app.Views.TeacherDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F0F2F5"
+             FontFamily="Segoe UI Variable Display, Segoe UI, Arial">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="PrimaryBlue"   Color="#3B82F6"/>
+        <SolidColorBrush x:Key="TextDark"       Color="#1E293B"/>
+        <SolidColorBrush x:Key="TextMuted"      Color="#64748B"/>
+
+        <!-- Stat Card -->
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background"    Value="White"/>
+            <Setter Property="CornerRadius"  Value="20"/>
+            <Setter Property="Padding"       Value="24,20"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.06" Color="Black"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Section Card -->
+        <Style x:Key="SectionCard" TargetType="Border">
+            <Setter Property="Background"    Value="White"/>
+            <Setter Property="CornerRadius"  Value="20"/>
+            <Setter Property="Padding"       Value="24"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.06" Color="Black"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Activity Row Hover -->
+        <Style x:Key="ActivityRow" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding"      Value="14,10"/>
+            <Setter Property="Margin"       Value="0,4"/>
+            <Setter Property="Background"   Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F8FAFC"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Badge -->
+        <Style x:Key="Badge" TargetType="Border">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding"      Value="10,4"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="32,28,32,28">
+
+            <!-- Header -->
+            <Grid Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Chào buổi sáng, Thầy Trọng Nguyên! 👋"
+                               FontSize="24" FontWeight="Bold"
+                               Foreground="#1E293B"/>
+                    <TextBlock Text="Hôm nay bạn có 3 lớp học và 12 bài cần chấm điểm."
+                               FontSize="13" Foreground="#64748B" Margin="0,6,0,0"/>
+                </StackPanel>
+                <Border Grid.Column="1" Background="White" CornerRadius="14"
+                        Padding="16,10" VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="1" Opacity="0.06" Color="Black"/>
+                    </Border.Effect>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📅" FontSize="16" VerticalAlignment="Center"/>
+                        <TextBlock Text="Thứ Năm, 03/04/2025" FontSize="13"
+                                   Foreground="#1E293B" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Stat Cards -->
+            <UniformGrid Columns="4" Margin="0,0,0,24">
+
+                <Border Style="{StaticResource StatCard}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <Border Width="42" Height="42" CornerRadius="12"
+                                Background="#EFF6FF" HorizontalAlignment="Left">
+                            <TextBlock Text="🎓" FontSize="20"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="8" FontSize="32" FontWeight="Bold"
+                                   Foreground="#1E293B" Margin="0,12,0,2"/>
+                        <TextBlock Text="Lớp đang dạy" FontSize="12" Foreground="#64748B"/>
+                        <TextBlock Text="↑ 2 so với kỳ trước" FontSize="11"
+                                   Foreground="#22C55E" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource StatCard}" Margin="5,0">
+                    <StackPanel>
+                        <Border Width="42" Height="42" CornerRadius="12"
+                                Background="#F0FDF4" HorizontalAlignment="Left">
+                            <TextBlock Text="👥" FontSize="20"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="247" FontSize="32" FontWeight="Bold"
+                                   Foreground="#1E293B" Margin="0,12,0,2"/>
+                        <TextBlock Text="Tổng sinh viên" FontSize="12" Foreground="#64748B"/>
+                        <TextBlock Text="↑ 18 sinh viên mới" FontSize="11"
+                                   Foreground="#22C55E" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource StatCard}" Margin="5,0">
+                    <StackPanel>
+                        <Border Width="42" Height="42" CornerRadius="12"
+                                Background="#FFF7ED" HorizontalAlignment="Left">
+                            <TextBlock Text="📝" FontSize="20"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="12" FontSize="32" FontWeight="Bold"
+                                   Foreground="#1E293B" Margin="0,12,0,2"/>
+                        <TextBlock Text="Bài cần chấm" FontSize="12" Foreground="#64748B"/>
+                        <TextBlock Text="⚠ Hạn cuối hôm nay" FontSize="11"
+                                   Foreground="#F59E0B" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource StatCard}" Margin="10,0,0,0">
+                    <StackPanel>
+                        <Border Width="42" Height="42" CornerRadius="12"
+                                Background="#FDF4FF" HorizontalAlignment="Left">
+                            <TextBlock Text="⭐" FontSize="20"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="8.4" FontSize="32" FontWeight="Bold"
+                                   Foreground="#1E293B" Margin="0,12,0,2"/>
+                        <TextBlock Text="Điểm TB lớp" FontSize="12" Foreground="#64748B"/>
+                        <TextBlock Text="↑ 0.3 điểm" FontSize="11"
+                                   Foreground="#22C55E" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Main Content Row -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="300"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Upcoming Classes -->
+                <Border Grid.Column="0" Style="{StaticResource SectionCard}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,16">
+                            <TextBlock Text="Lịch dạy hôm nay" FontSize="16"
+                                       FontWeight="Bold" Foreground="#1E293B"/>
+                            <TextBlock Text="Xem tất cả →" FontSize="12"
+                                       Foreground="#3B82F6" HorizontalAlignment="Right"
+                                       VerticalAlignment="Center" Cursor="Hand"/>
+                        </Grid>
+
+                        <!-- Class Row -->
+                        <Border Style="{StaticResource ActivityRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="48" Height="48"
+                                        CornerRadius="14" Background="#EFF6FF"
+                                        Margin="0,0,14,0">
+                                    <TextBlock Text="💻" FontSize="22"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Lập trình Web - Nhóm A"
+                                               FontWeight="SemiBold" FontSize="14"
+                                               Foreground="#1E293B"/>
+                                    <TextBlock Text="07:30 – 09:30  •  Phòng B204  •  32 SV"
+                                               FontSize="12" Foreground="#64748B" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <Border Grid.Column="2" Style="{StaticResource Badge}"
+                                        Background="#DCFCE7" VerticalAlignment="Center">
+                                    <TextBlock Text="Đang diễn ra" FontSize="11"
+                                               Foreground="#16A34A" FontWeight="SemiBold"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource ActivityRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="48" Height="48"
+                                        CornerRadius="14" Background="#FFF7ED"
+                                        Margin="0,0,14,0">
+                                    <TextBlock Text="🗃️" FontSize="22"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Cơ sở dữ liệu - Nhóm B"
+                                               FontWeight="SemiBold" FontSize="14"
+                                               Foreground="#1E293B"/>
+                                    <TextBlock Text="09:45 – 11:45  •  Phòng A103  •  28 SV"
+                                               FontSize="12" Foreground="#64748B" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <Border Grid.Column="2" Style="{StaticResource Badge}"
+                                        Background="#EFF6FF" VerticalAlignment="Center">
+                                    <TextBlock Text="Sắp tới" FontSize="11"
+                                               Foreground="#3B82F6" FontWeight="SemiBold"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource ActivityRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="48" Height="48"
+                                        CornerRadius="14" Background="#FDF4FF"
+                                        Margin="0,0,14,0">
+                                    <TextBlock Text="🤖" FontSize="22"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Trí tuệ nhân tạo - Nhóm C"
+                                               FontWeight="SemiBold" FontSize="14"
+                                               Foreground="#1E293B"/>
+                                    <TextBlock Text="13:00 – 15:00  •  Phòng C301  •  35 SV"
+                                               FontSize="12" Foreground="#64748B" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <Border Grid.Column="2" Style="{StaticResource Badge}"
+                                        Background="#F1F5F9" VerticalAlignment="Center">
+                                    <TextBlock Text="Chiều" FontSize="11"
+                                               Foreground="#64748B" FontWeight="SemiBold"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Quick Actions -->
+                        <Separator Margin="0,16" Background="#F1F5F9"/>
+                        <TextBlock Text="Thao tác nhanh" FontSize="13"
+                                   FontWeight="SemiBold" Foreground="#64748B"
+                                   Margin="0,0,0,12"/>
+                        <UniformGrid Columns="3">
+                            <Border CornerRadius="14" Background="#EFF6FF"
+                                    Padding="12,10" Margin="0,0,6,0" Cursor="Hand" MouseDown="BtnCreateExam_Click">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="➕" FontSize="18" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Tạo bài tập" FontSize="11"
+                                               Foreground="#3B82F6" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border CornerRadius="14" Background="#F0FDF4"
+                                    Padding="12,10" Margin="3,0" Cursor="Hand">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="✅" FontSize="18" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Điểm danh" FontSize="11"
+                                               Foreground="#16A34A" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border CornerRadius="14" Background="#FFF7ED"
+                                    Padding="12,10" Margin="6,0,0,0" Cursor="Hand">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="📢" FontSize="18" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Thông báo" FontSize="11"
+                                               Foreground="#F59E0B" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Right Column -->
+                <StackPanel Grid.Column="1" Margin="12,0,0,0">
+
+                    <!-- Pending Submissions -->
+                    <Border Style="{StaticResource SectionCard}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,14">
+                                <TextBlock Text="Bài nộp chờ chấm" FontSize="15"
+                                           FontWeight="Bold" Foreground="#1E293B"/>
+                                <Border Background="#FEE2E2" CornerRadius="8"
+                                        Padding="8,3" HorizontalAlignment="Right">
+                                    <TextBlock Text="12 bài" FontSize="11"
+                                               Foreground="#DC2626" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
+
+                            <Border Style="{StaticResource ActivityRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="BTVN Tuần 8 - Web"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="#1E293B"/>
+                                        <TextBlock Text="7 / 32 đã nộp"
+                                                   FontSize="11" Foreground="#64748B"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="Hôm nay"
+                                               FontSize="11" Foreground="#EF4444"
+                                               FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <Border Style="{StaticResource ActivityRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Kiểm tra giữa kỳ - DB"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="#1E293B"/>
+                                        <TextBlock Text="28 / 28 đã nộp"
+                                                   FontSize="11" Foreground="#64748B"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="04/04"
+                                               FontSize="11" Foreground="#64748B"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <Border Style="{StaticResource ActivityRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Đồ án nhóm - AI"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="#1E293B"/>
+                                        <TextBlock Text="5 / 35 đã nộp"
+                                                   FontSize="11" Foreground="#64748B"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="05/04"
+                                               FontSize="11" Foreground="#64748B"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Notifications Preview -->
+                    <Border Style="{StaticResource SectionCard}" MouseDown="BtnViewAllNotif_Click">
+                        <StackPanel>
+                            <TextBlock Text="Thông báo mới" FontSize="15"
+                                       FontWeight="Bold" Foreground="#1E293B"
+                                       Margin="0,0,0,14"/>
+                            <Border Style="{StaticResource ActivityRow}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🔔" FontSize="16" Margin="0,0,10,0"
+                                               VerticalAlignment="Top"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Phòng B204 đổi sang C102"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="#1E293B" TextWrapping="Wrap"/>
+                                        <TextBlock Text="5 phút trước" FontSize="11"
+                                                   Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource ActivityRow}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📋" FontSize="16" Margin="0,0,10,0"
+                                               VerticalAlignment="Top"/>
+                                    <StackPanel>
+                                        <TextBlock Text="15 SV đăng ký xem điểm lại"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="#1E293B" TextWrapping="Wrap"/>
+                                        <TextBlock Text="1 giờ trước" FontSize="11"
+                                                   Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
