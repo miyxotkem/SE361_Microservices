@@ -11,13 +11,6 @@ namespace e_learning_app
         private ProfileManage _mainProfile;
         private DatabaseManager _dbManager;
 
-        public NewPassword()
-        {
-            InitializeComponent();
-            _mainProfile = new ProfileManage();
-            _dbManager = new DatabaseManager();
-        }
-
         public NewPassword(ProfileManage mainProfile, DatabaseManager dbManager)
         {
             InitializeComponent();

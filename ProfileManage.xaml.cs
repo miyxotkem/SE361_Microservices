@@ -9,27 +9,21 @@ namespace e_learning_app
 {
     public partial class ProfileManage : UserControl
     {
-        private DatabaseManager dbManager;
+        private DatabaseManager _dbManager;
 
-        public ProfileManage()
+        public ProfileManage(DatabaseManager dbManager)
         {
             InitializeComponent();
-            dbManager = new DatabaseManager();
-            dbManager.Initialize();
+            _dbManager = dbManager;
         }
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                Query query = dbManager.GetDb.Collection("Users").WhereEqualTo("Email", "john@example.com");
-                QuerySnapshot snapshot = await query.GetSnapshotAsync();
-
-                dbManager.SetCurrentUser(snapshot.Documents[0].ConvertTo<User>());
-
-                if (snapshot.Documents.Count > 0)
+                if (_dbManager.GetCurrentUser() != null)
                 {
-                    User user = await dbManager.GetUserAsync(snapshot.Documents[0].Id);
+                    User user = await _dbManager.GetUserAsync(_dbManager.GetCurrentUser().Id);
                     if (user != null)
                     {
                         txtFullName.Text = user.FullName;
@@ -50,12 +44,12 @@ namespace e_learning_app
         {
             MainProfileUI.Visibility = Visibility.Collapsed;
             FullScreenOverlay.Visibility = Visibility.Visible;
-            FullScreenOverlay.Content = new CurrentPassword(this, dbManager);
+            FullScreenOverlay.Content = new CurrentPassword(this, _dbManager);
         }
 
         public void ShowNewPasswordView()
         {
-            FullScreenOverlay.Content = new NewPassword(this, dbManager);
+            FullScreenOverlay.Content = new NewPassword(this, _dbManager);
         }
 
         public void ClosePasswordView()
@@ -69,15 +63,15 @@ namespace e_learning_app
         {
             try
             {
-                var user = dbManager.GetCurrentUser();
-                
+                var user = _dbManager.GetCurrentUser();
+
                 user.FullName = txtFullName.Text;
                 user.Email = txtEmail.Text;
                 user.PhoneNumber = txtPhone.Text;
                 user.Username = txtUsername.Text;
                 user.Role = txtRole.Text;
 
-                await dbManager.UpdateFullProfile(user.Id, user);
+                await _dbManager.UpdateFullProfile(user.Id, user);
                 MessageBox.Show("Profile updated successfully!");
             }
             catch (Exception ex)

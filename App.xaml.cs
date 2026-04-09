@@ -1,4 +1,5 @@
-﻿using System.Configuration;
+﻿using FirebaseIntegration;
+using System.Configuration;
 using System.Data;
 using System.Windows;
 
@@ -14,8 +15,5 @@ namespace e_learning_app
             base.OnStartup(e);
             e_learning_app.FirebaseService.Initialize();
         }
-
     }
-
-
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FirebaseIntegration;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace e_learning_app.Views
 {
     public partial class ReportsView : UserControl
     {
+        private readonly DatabaseManager _dbManager;
         // ── Models ───────────────────────────────────────────────────
         public class ClassReport
         {
@@ -34,7 +36,7 @@ namespace e_learning_app.Views
         private string _semester = "Học kỳ 2 – 2024";
 
         // ── Constructor ──────────────────────────────────────────────
-        public ReportsView() { InitializeComponent(); LoadData(); }
+        public ReportsView(DatabaseManager dbManager) { InitializeComponent(); LoadData(); _dbManager = dbManager; }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e) => Refresh();
 
@@ -271,7 +273,7 @@ namespace e_learning_app.Views
         private void BtnViewAllClasses_Click(object sender, RoutedEventArgs e)
         {
             if (Window.GetWindow(this) is MainWindow mw)
-                mw.NavigateTo(new MyClassesView());
+                mw.NavigateTo(new MyClassesView(_dbManager));
         }
     }
 }

@@ -1,0 +1,147 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using e_learning_app;
+using FirebaseIntegration;
+
+namespace e_learning_app
+{
+    public partial class CreateCoursesView : Window
+    {
+        // Private field to hold the passed manager
+        private readonly DatabaseManager _dbManager;
+
+        private string _selectedColor = "#3B82F6";
+        private readonly List<string> _vibeColors = new() { "#3B82F6", "#8B5CF6", "#F59E0B", "#10B981", "#EC4899", "#64748B" };
+        private bool _isInitialized = false;
+
+        // Constructor now explicitly requires DatabaseManager
+        public CreateCoursesView(DatabaseManager dbManager)
+        {
+            InitializeComponent();
+            _dbManager = dbManager;
+
+            PopulateYears();
+
+            _isInitialized = true;
+            UpdatePreview();
+        }
+
+        private void PopulateYears()
+        {
+            if (CbYear == null) return;
+
+            // Set the specific pivot date: August 1, 2025
+            DateTime pivotDate = new DateTime(2025, 8, 1);
+
+            // If today is before the pivot date, start at 2024. Otherwise, start at 2025.
+            int startYear = DateTime.Now < pivotDate ? 2024 : 2025;
+
+            CbYear.Items.Clear();
+
+            // Generate 4 academic years based on that exact start year
+            for (int i = -1; i < 4; i++)
+            {
+                CbYear.Items.Add($"{startYear + i} - {startYear + i + 1}");
+            }
+
+            CbYear.SelectedIndex = 0;
+        }
+
+        // Live updating color from XAML RadioButtons
+        private void ColorRadio_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!_isInitialized || PreviewHeader == null) return;
+
+            if (sender is RadioButton rb && rb.Background is SolidColorBrush brush)
+            {
+                // Convert Brush to Hex
+                _selectedColor = $"#{brush.Color.R:X2}{brush.Color.G:X2}{brush.Color.B:X2}";
+                PreviewHeader.Background = brush;
+            }
+        }
+
+        private void Sync_UI(object sender, TextChangedEventArgs e) { if (_isInitialized) UpdatePreview(); }
+        private void Sync_UI_Selection(object sender, SelectionChangedEventArgs e) { if (_isInitialized) UpdatePreview(); }
+
+        private void UpdatePreview()
+        {
+            if (!_isInitialized || PreviewTitle == null || PreviewClass == null) return;
+
+            PreviewTitle.Text = string.IsNullOrWhiteSpace(TxtTitle.Text) ? "Tên môn học" : TxtTitle.Text;
+            PreviewEmoji.Text = string.IsNullOrWhiteSpace(TxtEmoji.Text) ? "📚" : TxtEmoji.Text;
+
+            if (PreviewDesc != null)
+                PreviewDesc.Text = string.IsNullOrWhiteSpace(TxtDescription.Text) ? "Mô tả tóm tắt môn học sẽ hiển thị ở đây..." : TxtDescription.Text;
+
+            string sem = (CbSemester.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Học kỳ 1";
+            string year = CbYear.SelectedItem?.ToString() ?? $"{DateTime.Now.Year} - {DateTime.Now.Year + 1}";
+            string cls = string.IsNullOrWhiteSpace(TxtClass.Text) ? "Lớp học" : TxtClass.Text;
+
+            // Show category in preview if available, otherwise just standard info
+            string cat = string.IsNullOrWhiteSpace(TxtCategory.Text) ? "" : $" • {TxtCategory.Text}";
+
+            PreviewClass.Text = $"{cls} • {sem} • {year}{cat}";
+        }
+
+        private async void BtnCreate_Click(object sender, RoutedEventArgs e)
+        {
+            // Validation: Ensure all fields are filled out before proceeding
+            if (string.IsNullOrWhiteSpace(TxtTitle.Text) ||
+                string.IsNullOrWhiteSpace(TxtClass.Text) ||
+                string.IsNullOrWhiteSpace(TxtCategory.Text) ||
+                string.IsNullOrWhiteSpace(TxtDescription.Text))
+            {
+                MessageBox.Show("Vui lòng điền đầy đủ tất cả các thông tin (Tên môn, Mô tả, Mã lớp, Chuyên ngành) trước khi tạo lớp!",
+                                "Thiếu thông tin", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // UI Feedback
+            BtnSubmit.IsEnabled = false;
+            BtnSubmit.Content = "Đang xử lý...";
+
+            try
+            {
+                var course = new Course
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Title = TxtTitle.Text.Trim(),
+                    Description = TxtDescription.Text.Trim(),
+                    ClassName = TxtClass.Text.Trim(),
+
+                    // Added new features mapped to the database structure
+                    CourseType = (CbCourseType.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Đại cương",
+                    Category = TxtCategory.Text.Trim(),
+
+                    Semester = $"{(CbSemester.SelectedItem as ComboBoxItem).Content} - {CbYear.SelectedItem}",
+                    Emoji = PreviewEmoji.Text,
+                    AccentColor = _selectedColor,
+                    InstructorId = _dbManager.GetCurrentUser()?.Id ?? "Unknown",
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                };
+
+                bool success = await _dbManager.CreateCourseAsync(course);
+
+                if (success)
+                {
+                    this.DialogResult = true;
+                    this.Close();
+                }
+                else
+                {
+                    throw new Exception("Firebase rejected the save operation.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi lưu vào Firebase: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                BtnSubmit.IsEnabled = true;
+                BtnSubmit.Content = "Hoàn tất và Tạo lớp";
+            }
+        }
+    }
+}

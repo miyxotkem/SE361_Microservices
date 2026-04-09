@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FirebaseIntegration;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,6 +9,7 @@ namespace e_learning_app.Views
 {
     public partial class TeacherDashboardView : UserControl
     {
+        private readonly DatabaseManager _dbManager;
         // ── Models ───────────────────────────────────────────────────
         public class TodoItem
         {
@@ -48,10 +50,11 @@ namespace e_learning_app.Views
         private double _avgScore = 7.8;
 
         // ── Constructor ──────────────────────────────────────────────
-        public TeacherDashboardView()
+        public TeacherDashboardView(DatabaseManager dbManager)
         {
             InitializeComponent();
             LoadData();
+            _dbManager = dbManager;
         }
 
         // ── Loaded ───────────────────────────────────────────────────
@@ -253,7 +256,7 @@ namespace e_learning_app.Views
         private void BtnCreateClass_Click(object sender, RoutedEventArgs e)
         {
             if (Window.GetWindow(this) is MainWindow mw)
-                mw.NavigateTo(new MyClassesView());
+                mw.NavigateTo(new MyClassesView(_dbManager));
         }
 
         private void BtnCreateExam_Click(object sender, RoutedEventArgs e)
