@@ -1,4 +1,4 @@
-﻿using Firebase.Auth;
+using Firebase.Auth;
 using Firebase.Auth.Providers;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Util.Store;
@@ -10,6 +10,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using FirebaseAdmin;
+using Google.Cloud.Firestore;
+using FirebaseAdmin.Auth;
 
 namespace e_learning_app
 {
@@ -89,6 +92,9 @@ namespace e_learning_app
 
             try
             {
+                // Xóa cache cũ để có thể chọn tài khoản Google khác
+                await dataStore.ClearAsync();
+
                 string[] scopes = { "openid", "email", "profile" };
                 var secrets = new ClientSecrets
                 {
@@ -137,6 +143,41 @@ namespace e_learning_app
             }
             catch
             {
+                return false;
+            }
+        }
+        public static async Task<bool> CreateUserInFirestore(string uid, string email = "", string displayName = "")
+        {
+            try
+            {
+                if (Db == null)
+                {
+                    MessageBox.Show("Chưa kết nối được Firestore!");
+                    return false;
+                }
+
+                DocumentReference docRef = Db.Collection("users").Document(uid);
+                DocumentSnapshot snapshot = await docRef.GetSnapshotAsync();
+
+                // Kiểm tra xem user đã tồn tại chưa để tránh ghi đè
+                if (!snapshot.Exists)
+                {
+                    Dictionary<string, object> user = new Dictionary<string, object>
+                    {
+                        { "Uid", uid },
+                        { "Email", email },
+                        { "DisplayName", string.IsNullOrEmpty(displayName) ? "New User" : displayName },
+                        { "CreatedAt", FieldValue.ServerTimestamp },
+                        { "Role", "Student" }
+                    };
+
+                    await docRef.SetAsync(user);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tạo user trong Firestore: " + ex.Message);
                 return false;
             }
         }
