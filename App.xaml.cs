@@ -14,8 +14,5 @@ namespace e_learning_app
             base.OnStartup(e);
             e_learning_app.FirebaseService.Initialize();
         }
-
     }
-
-
 }

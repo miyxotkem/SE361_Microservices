@@ -157,7 +157,7 @@ namespace e_learning_app
                     return false;
                 }
 
-                DocumentReference docRef = Db.Collection("users").Document(uid);
+                DocumentReference docRef = Db.Collection("userss").Document(uid);
                 DocumentSnapshot snapshot = await docRef.GetSnapshotAsync();
 
                 // Kiểm tra xem user đã tồn tại chưa để tránh ghi đè

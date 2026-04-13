@@ -1,6 +1,6 @@
 ﻿using Google.Cloud.Firestore;
 
-namespace FirebaseIntegration
+namespace e_learning_app
 {
     [FirestoreData]
     public class User
