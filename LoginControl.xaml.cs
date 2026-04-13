@@ -39,6 +39,7 @@ namespace e_learning_app
 
             if (userId != null)
             {
+                await FirebaseService.CreateUserInFirestore(userId);
                 var current_window = Window.GetWindow(this) as LoginWindow;
                 MainWindow main = new MainWindow();
                 main.Show();
@@ -66,6 +67,7 @@ namespace e_learning_app
             if (userId != null)
             {
                 var current_window = Window.GetWindow(this) as LoginWindow;
+                await FirebaseService.CreateUserInFirestore(userId);
                 MainWindow main = new MainWindow();
                 main.Show();
                 main.Activate();
@@ -99,6 +101,7 @@ namespace e_learning_app
                     if (userId != null)
                     {
                         var current_window = Window.GetWindow(this) as LoginWindow;
+                        await FirebaseService.CreateUserInFirestore(userId);
                         MainWindow main = new MainWindow();
                         main.Show();
                         main.Activate();

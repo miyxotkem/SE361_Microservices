@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -51,6 +51,7 @@ namespace e_learning_app
 
                 if (newUserId != null)
                 {
+                    await FirebaseService.CreateUserInFirestore(newUserId, email); // Lưu vào Firestore với Email
                     MessageBox.Show("Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.");
                     var parent_window=Window.GetWindow(this) as LoginWindow;
                     if (parent_window != null)

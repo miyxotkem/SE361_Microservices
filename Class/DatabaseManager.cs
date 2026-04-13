@@ -2,8 +2,10 @@
 using Google.Cloud.Firestore;
 using System;
 using System.Threading.Tasks;
+using System.IO;
+using static Google.Cloud.Firestore.V1.StructuredQuery.Types;
 
-namespace FirebaseIntegration
+namespace e_learning_app
 {
     public class DatabaseManager
     {
@@ -19,7 +21,11 @@ namespace FirebaseIntegration
 
         public void Initialize()
         {
-            Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", "C:\\Users\\Thinh Phat\\Documents\\UIT\\SE104_E-learningSystem\\firebase\\google_json.json");
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "firebase", "firebase_json.json");
+            if (File.Exists(path))
+            {
+                Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", path);
+            }
             db = FirestoreDb.Create("e-learning-cd1b3");
         }
 

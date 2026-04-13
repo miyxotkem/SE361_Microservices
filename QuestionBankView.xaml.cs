@@ -100,12 +100,12 @@ namespace e_learning_app.Views
             TxtMidCount.Text = _all.Count(q => q.Level == "Trung bình").ToString();
             TxtEasyCount.Text = _all.Count(q => q.Level == "Dễ").ToString();
 
-            var results = Filtered().ToList();
-            TxtResultCount.Text = $"{results.Count} kết quả";
+            //var results = Filtered().ToList();
+            ////TxtResultCount.Text = $"{results.Count} kết quả";
 
-            QuestionsPanel.Children.Clear();
-            foreach (var q in results)
-                QuestionsPanel.Children.Add(BuildQuestionRow(q));
+            //QuestionsPanel.Children.Clear();
+            //foreach (var q in results)
+            //    QuestionsPanel.Children.Add(BuildQuestionRow(q));
         }
 
         private Border BuildQuestionRow(Question q)
