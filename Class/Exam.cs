@@ -1,4 +1,5 @@
-﻿using System;
+using Google.Cloud.Firestore;
+using System;
 using System.Collections.Generic;
 
 namespace e_learning_app.Class
@@ -6,43 +7,82 @@ namespace e_learning_app.Class
     /// <summary>
     /// Mô hình bài thi chính
     /// </summary>
+    [FirestoreData]  
     public class Exam
     {
-        public string Id { get; set; }                    // Unique ID (Firebase)
-        public string ClassId { get; set; }              // Lớp học này thuộc
-        public string Title { get; set; }                // Tên bài thi
-        public string Description { get; set; }          // Mô tả chi tiết
-        public string SubjectCode { get; set; }          // Mã môn học
+        [FirestoreDocumentId]  
+        public string Id { get; set; }
 
-        // Cấu hình bài thi
-        public int TotalQuestions { get; set; }          // Tổng số câu
-        public int TimeLimitMinutes { get; set; }        // Giới hạn thời gian (phút)
-        public double PassingScore { get; set; }         // Điểm qua (%)
-        public ExamType Type { get; set; }               // Loại: Quiz, Midterm, Final, etc.
+        [FirestoreProperty]
+        public string ClassId { get; set; }
 
-        // Các câu hỏi
-        public List<string> QuestionIds { get; set; }    // Danh sách ID câu hỏi
+        [FirestoreProperty]
+        public string ClassName { get; set; }
 
-        // Trạng thái
+        [FirestoreProperty]
+        public string Title { get; set; }
+
+        [FirestoreProperty]
+        public string Description { get; set; }
+
+        [FirestoreProperty]
+        public string SubjectCode { get; set; }
+
+        // ========== Cấu hình bài thi ==========
+        [FirestoreProperty]
+        public int TotalQuestions { get; set; }
+
+        [FirestoreProperty]
+        public int TimeLimitMinutes { get; set; }
+
+        [FirestoreProperty]
+        public double PassingScore { get; set; }
+
+        [FirestoreProperty]
+        public ExamType Type { get; set; }
+
+        // ========== Các câu hỏi ==========
+        [FirestoreProperty]
+        public List<string> QuestionIds { get; set; }
+
+        // ========== Trạng thái ==========
+        [FirestoreProperty]
         public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-        public DateTime? ScheduledDate { get; set; }     // Thời gian thi
-        public bool IsPublished { get; set; }            // Đã công bố?
-        public bool IsActive { get; set; }               // Đang mở?
 
-        // Cài đặt nâng cao
-        public bool AllowReview { get; set; }            // Cho phép xem lại?
-        public bool RandomizeQuestions { get; set; }     // Xáo trộn câu hỏi?
-        public bool ShowScore { get; set; }              // Hiển thị điểm ngay?
-        public bool AllowMultipleAttempts { get; set; }  // Cho phép thi nhiều lần?
-        public int MaxAttempts { get; set; }             // Số lần thi tối đa
+        [FirestoreProperty]
+        public DateTime UpdatedAt { get; set; }
+
+        [FirestoreProperty]
+        public DateTime? ScheduledDate { get; set; }
+
+        [FirestoreProperty]
+        public bool IsPublished { get; set; }
+
+        [FirestoreProperty]
+        public bool IsActive { get; set; }
+
+        // ========== Cài đặt nâng cao ==========
+        [FirestoreProperty]
+        public bool AllowReview { get; set; }
+
+        [FirestoreProperty]
+        public bool RandomizeQuestions { get; set; }
+
+        [FirestoreProperty]
+        public bool ShowScore { get; set; }
+
+        [FirestoreProperty]
+        public bool AllowMultipleAttempts { get; set; }
+
+        [FirestoreProperty]
+        public int MaxAttempts { get; set; }
 
         public Exam()
         {
             Id = Guid.NewGuid().ToString();
             QuestionIds = new List<string>();
-            CreatedAt = DateTime.Now;
-            UpdatedAt = DateTime.Now;
+            CreatedAt = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
+            UpdatedAt = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
             TotalQuestions = 0;
             TimeLimitMinutes = 60;
             PassingScore = 50;

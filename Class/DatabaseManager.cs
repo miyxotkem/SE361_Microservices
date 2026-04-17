@@ -1,12 +1,13 @@
     using e_learning_app;
+using e_learning_app.Class;
 using Firebase.Auth;
 using Google.Cloud.Firestore;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.IO;
-using static Google.Cloud.Firestore.V1.StructuredQuery.Types;
+using System.Threading.Tasks;
 using System.Windows;
+using static Google.Cloud.Firestore.V1.StructuredQuery.Types;
 
 namespace e_learning_app
 {
@@ -19,6 +20,11 @@ namespace e_learning_app
 
         public User GetCurrentUser() => _currentUser;
         public void SetCurrentUser(User user) => _currentUser = user;
+
+        public DatabaseManager()
+        {
+            Initialize();
+        }
 
         public void Initialize()
         {
@@ -205,6 +211,128 @@ namespace e_learning_app
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Delete Content Error: {ex.Message}");
+                return false;
+            }
+        }
+
+        // ========== EXAM METHODS ==========
+
+        /// <summary>
+        /// Lấy tất cả lớp học của instructor hiện tại
+        /// </summary>
+        public async Task<List<Course>> GetAllCoursesAsync()
+        {
+            try
+            {
+                if (_db == null) return new List<Course>();
+
+                var currentUser = GetCurrentUser();
+                if (currentUser == null)
+                {
+                    return new List<Course>();
+                }
+
+                var query = await _db.Collection("Courses")
+                    .WhereEqualTo("InstructorId", currentUser.Id)
+                    .GetSnapshotAsync();
+
+                var courses = query.Documents
+                    .Select(doc => doc.ConvertTo<Course>())
+                    .ToList();
+
+                return courses;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetAllCoursesAsync Error: {ex.Message}");
+                return new List<Course>();
+            }
+        }
+
+        /// <summary>
+        /// Tạo bài thi mới
+        /// </summary>
+        public async Task<bool> CreateExamAsync(Exam exam)
+        {
+            try
+            {
+                if (_db == null) return false;
+
+                if (exam == null || string.IsNullOrEmpty(exam.Id))
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ Exam or Exam.Id is null");
+                    return false;
+                }
+
+                await _db.Collection("exams").Document(exam.Id).SetAsync(exam);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateExamAsync Error: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Lấy tất cả bài thi của lớp
+        /// </summary>
+        public async Task<List<Exam>> GetExamsByClassAsync(string classId)
+        {
+            try
+            {
+                if (_db == null) return new List<Exam>();
+
+                var query = await _db.Collection("exams")
+                    .WhereEqualTo("classId", classId)
+                    .GetSnapshotAsync();
+
+                return query.Documents
+                    .Select(doc => doc.ConvertTo<Exam>())
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetExamsByClassAsync Error: {ex.Message}");
+                return new List<Exam>();
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật bài thi
+        /// </summary>
+        public async Task<bool> UpdateExamAsync(Exam exam)
+        {
+            try
+            {
+                if (_db == null) return false;
+
+                exam.UpdatedAt = DateTime.Now;
+                await _db.Collection("exams").Document(exam.Id).SetAsync(exam, SetOptions.Overwrite);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateExamAsync Error: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Xóa bài thi
+        /// </summary>
+        public async Task<bool> DeleteExamAsync(string examId)
+        {
+            try
+            {
+                if (_db == null) return false;
+
+                await _db.Collection("exams").Document(examId).DeleteAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DeleteExamAsync Error: {ex.Message}");
                 return false;
             }
         }

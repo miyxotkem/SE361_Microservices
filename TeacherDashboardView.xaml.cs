@@ -49,6 +49,13 @@ namespace e_learning_app.Views
         private double _avgScore = 7.8;
 
         // ── Constructor ──────────────────────────────────────────────
+        public TeacherDashboardView()
+        {
+            InitializeComponent();
+            LoadData();
+            _dbManager = new DatabaseManager();
+        }
+
         public TeacherDashboardView(DatabaseManager dbManager)
         {
             InitializeComponent();
@@ -255,13 +262,13 @@ namespace e_learning_app.Views
         private void BtnCreateClass_Click(object sender, RoutedEventArgs e)
         {
             if (Window.GetWindow(this) is MainWindow mw)
-                mw.NavigateTo(new MyClassesView(_dbManager));
+                mw.NavigateTo(new CreateCoursesView(_dbManager));
         }
 
         private void BtnCreateExam_Click(object sender, RoutedEventArgs e)
         {
             if (Window.GetWindow(this) is MainWindow mw)
-                mw.NavigateTo(new QuestionBankView());
+                mw.NavigateTo(new CreateExamView(_dbManager));
         }
 
         private void BtnScheduleClass_Click(object sender, RoutedEventArgs e)

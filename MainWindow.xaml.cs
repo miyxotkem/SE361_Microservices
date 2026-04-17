@@ -15,7 +15,6 @@ namespace e_learning_app
             InitializeComponent();
 
             _dbManager = new DatabaseManager();
-            _dbManager.Initialize();
 
             MainContentArea.Content = new TeacherDashboardView(_dbManager);
             btnDashBoard.Focus();
@@ -47,6 +46,11 @@ namespace e_learning_app
         private void NavQuestions_Click(object sender, RoutedEventArgs e)
         {
             MainContentArea.Content = new QuestionBankView();
+        }
+
+        private void NavExams_Click(object sender, RoutedEventArgs e)
+        {
+            MainContentArea.Content = new ExamManagementView(_dbManager);
         }
 
         private void NavReports_Click(object sender, RoutedEventArgs e)
