@@ -1,11 +1,10 @@
 ﻿using Google.Cloud.Firestore;
 
-namespace e_learning_app // or e_learning_app.Models
+namespace e_learning_app
 {
     [FirestoreData]
     public class CourseContent
     {
-        // We don't map the ID directly to Firestore property, we set it manually after fetching
         public string Id { get; set; }
 
         [FirestoreProperty]
@@ -15,7 +14,7 @@ namespace e_learning_app // or e_learning_app.Models
         public string Title { get; set; }
 
         [FirestoreProperty]
-        public string Type { get; set; } // "Document", "Link", or "Note"
+        public string Type { get; set; }
 
         [FirestoreProperty]
         public string Data { get; set; }
@@ -23,7 +22,6 @@ namespace e_learning_app // or e_learning_app.Models
         [FirestoreProperty]
         public int OrderIndex { get; set; }
 
-        // Computed property for UI, ignored by Firestore
         public string Icon => Type == "Document" ? "📄" : Type == "Link" ? "🔗" : "📝";
     }
 }
