@@ -21,6 +21,14 @@ using CloudinaryDotNet.Actions;
 
 namespace e_learning_app.Views
 {
+    public class PendingRequest
+    {
+        public string RegistrationId { get; set; }
+        public string UserId { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+    }
+
     public class DeadlineColorConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -102,12 +110,42 @@ namespace e_learning_app.Views
             }
         }
 
-        private void ApplyRolePermissions()
+        private async void ApplyRolePermissions() // Thêm chữ async vào đây
         {
             bool isInstructor = _course.InstructorId == CurrentUserId;
             BtnMoreActions.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
             BtnAddContent.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
             BtnShowAddAssignment.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
+            BtnManageApprovals.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
+
+            // Nếu là giảng viên thì tự động check số lượng đang chờ để gắn lên Notification Badge
+            if (isInstructor)
+            {
+                await UpdatePendingBadgeAsync();
+            }
+        }
+
+        private async Task UpdatePendingBadgeAsync()
+        {
+            try
+            {
+                var snap = await _dbManager.GetDb.Collection("courseRegistrations")
+                    .WhereEqualTo("courseId", _course.Id)
+                    .WhereEqualTo("status", "pending")
+                    .GetSnapshotAsync();
+
+                int count = snap.Count;
+                if (count > 0)
+                {
+                    BadgeBorder.Visibility = Visibility.Visible;
+                    TxtPendingCount.Text = count > 99 ? "99+" : count.ToString(); // Nếu quá 99 thì ghi 99+
+                }
+                else
+                {
+                    BadgeBorder.Visibility = Visibility.Collapsed;
+                }
+            }
+            catch { }
         }
 
         private async void LoadCourseContent()
@@ -137,7 +175,10 @@ namespace e_learning_app.Views
             TxtCategory.Text = string.IsNullOrWhiteSpace(_course.Category) ? "Chung" : _course.Category;
             TxtCourseType.Text = string.IsNullOrWhiteSpace(_course.CourseType) ? "Đại cương" : _course.CourseType;
             TxtDescription.Text = string.IsNullOrWhiteSpace(_course.Description) ? "Chưa có mô tả chi tiết." : _course.Description;
+
+            // Lấy trực tiếp từ Model Course
             TxtStudentCount.Text = _course.StudentCount.ToString();
+            TxtAssignmentCount.Text = _course.AssignmentCount.ToString();
 
             var converter = new BrushConverter();
             Brush accentBrush = Brushes.SlateBlue;
@@ -261,10 +302,9 @@ namespace e_learning_app.Views
                 else if (_editingContent.Type == "Note") AddNoteInput.Text = _editingContent.Data;
                 else if (_editingContent.Type == "Document")
                 {
-                    // Lấy lại tên file gọn gàng
                     string displayTitle = GetDisplayNameFromUrl(_editingContent.Data, "document");
                     AddDocPathInput.Text = displayTitle;
-                    AddDocPathInput.Tag = _editingContent.Data; // Lưu URL cũ vào Tag
+                    AddDocPathInput.Tag = _editingContent.Data;
                 }
 
                 MainScrollViewer.Effect = new BlurEffect { Radius = 10 };
@@ -316,9 +356,6 @@ namespace e_learning_app.Views
             CloseDeleteContentModal_Click(null, null);
         }
 
-        // ==========================================
-        // CÁC HÀM XỬ LÝ URL CLOUDINARY
-        // ==========================================
         private string GetPublicIdFromUrl(string url)
         {
             try
@@ -399,7 +436,7 @@ namespace e_learning_app.Views
             if (openFileDialog.ShowDialog() == true)
             {
                 AddDocPathInput.Text = openFileDialog.FileName;
-                AddDocPathInput.Tag = openFileDialog.FileName; // Lưu đường dẫn mới
+                AddDocPathInput.Tag = openFileDialog.FileName;
 
                 if (string.IsNullOrWhiteSpace(AddTitleInput.Text))
                 {
@@ -430,7 +467,6 @@ namespace e_learning_app.Views
             }
             else if (type == "Document")
             {
-                // Tag đang chứa đường dẫn thật nếu chọn file mới, hoặc chứa URL cũ nếu đang Edit
                 string sourcePath = AddDocPathInput.Tag?.ToString();
 
                 if (string.IsNullOrWhiteSpace(sourcePath)) { MessageBox.Show("Vui lòng chọn tệp hợp lệ!"); return; }
@@ -622,8 +658,15 @@ namespace e_learning_app.Views
 
                     await _dbManager.GetDb.Collection("Courses").Document(_course.Id).Collection("Assignments").Document(_assignmentToDelete.Id).DeleteAsync();
 
+                    // THÊM MỚI: Giảm biến đếm và lưu lên Firestore
+                    if (_course.AssignmentCount > 0)
+                    {
+                        _course.AssignmentCount--;
+                        await _dbManager.GetDb.Collection("Courses").Document(_course.Id).UpdateAsync("AssignmentCount", _course.AssignmentCount);
+                    }
+
                     _assignments.Remove(_assignmentToDelete);
-                    TxtAssignmentCount.Text = _assignments.Count.ToString();
+                    TxtAssignmentCount.Text = _course.AssignmentCount.ToString();
                 }
                 catch (Exception ex)
                 {
@@ -743,7 +786,14 @@ namespace e_learning_app.Views
                         CreatedAt = DateTime.UtcNow
                     };
                     await collectionRef.AddAsync(newAssignment);
+
+                    // THÊM MỚI: Tăng biến đếm và lưu lên Firestore
+                    _course.AssignmentCount++;
+                    await _dbManager.GetDb.Collection("Courses").Document(_course.Id).UpdateAsync("AssignmentCount", _course.AssignmentCount);
                 }
+
+                // Cập nhật lại Text đếm bài tập trên UI
+                TxtAssignmentCount.Text = _course.AssignmentCount.ToString();
 
                 LoadAssignments();
                 CloseAddAssignmentDrawer_Click(null, null);
@@ -1206,6 +1256,158 @@ namespace e_learning_app.Views
                 else parentObject = VisualTreeHelper.GetParent(parentObject);
             }
             return null;
+        }
+
+        // ==========================================
+        // LOGIC QUẢN LÝ DUYỆT HỌC VIÊN (INSTRUCTOR)
+        // ==========================================
+        private ObservableCollection<PendingRequest> _pendingRequests = new();
+
+        private async void BtnManageApprovals_Click(object sender, RoutedEventArgs e)
+        {
+            MainScrollViewer.Effect = new BlurEffect { Radius = 10 };
+            ApprovalDrawer.Visibility = Visibility.Visible;
+            await LoadPendingRequestsAsync();
+        }
+
+        private void CloseApprovalDrawer_Click(object sender, RoutedEventArgs e)
+        {
+            ApprovalDrawer.Visibility = Visibility.Collapsed;
+            MainScrollViewer.Effect = null;
+        }
+
+        private async Task LoadPendingRequestsAsync()
+        {
+            try
+            {
+                // 1. Tải danh sách từ Firebase
+                var snap = await _dbManager.GetDb.Collection("courseRegistrations")
+                    .WhereEqualTo("courseId", _course.Id)
+                    .WhereEqualTo("status", "pending")
+                    .GetSnapshotAsync();
+
+                _pendingRequests.Clear();
+
+                foreach (var doc in snap.Documents)
+                {
+                    string uId = doc.GetValue<string>("userId");
+
+                    var userDoc = await _dbManager.GetDb.Collection("Users").Document(uId).GetSnapshotAsync();
+                    string name = userDoc.Exists ? userDoc.GetValue<string>("FullName") : "Học viên ẩn danh";
+                    string email = userDoc.Exists ? userDoc.GetValue<string>("Email") : "";
+
+                    _pendingRequests.Add(new PendingRequest
+                    {
+                        RegistrationId = doc.Id,
+                        UserId = uId,
+                        FullName = name,
+                        Email = email
+                    });
+                }
+
+                // 2. Cập nhật ItemsSource
+                PendingRequestsList.ItemsSource = _pendingRequests;
+
+                // 3. LOGIC HIỂN THỊ THÔNG BÁO TRỐNG
+                if (_pendingRequests.Count > 0)
+                {
+                    TxtNoPendingRequests.Visibility = Visibility.Collapsed; // Ẩn chữ "Không có yêu cầu"
+                    BtnAcceptAll.Visibility = Visibility.Visible;           // Hiện nút Duyệt tất cả
+
+                    // Cập nhật Badge thông báo
+                    BadgeBorder.Visibility = Visibility.Visible;
+                    TxtPendingCount.Text = _pendingRequests.Count > 99 ? "99+" : _pendingRequests.Count.ToString();
+                }
+                else
+                {
+                    TxtNoPendingRequests.Visibility = Visibility.Visible;   // HIỆN chữ "Không có yêu cầu"
+                    BtnAcceptAll.Visibility = Visibility.Collapsed;         // Ẩn nút Duyệt tất cả
+
+                    // Ẩn Badge thông báo
+                    BadgeBorder.Visibility = Visibility.Collapsed;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải danh sách: " + ex.Message);
+            }
+        }
+
+        private async void BtnAcceptStudent_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string regId)
+            {
+                try
+                {
+                    var regRef = _dbManager.GetDb.Collection("courseRegistrations").Document(regId);
+
+                    await regRef.UpdateAsync(new Dictionary<string, object> {
+                        { "status", "accepted" },
+                        { "approvedDate", Google.Cloud.Firestore.FieldValue.ServerTimestamp }
+                    });
+
+                    _course.StudentCount++;
+                    await _dbManager.GetDb.Collection("Courses").Document(_course.Id).UpdateAsync("StudentCount", _course.StudentCount);
+
+                    TxtStudentCount.Text = _course.StudentCount.ToString();
+                    await LoadPendingRequestsAsync();
+                }
+                catch (Exception ex) { MessageBox.Show("Lỗi duyệt: " + ex.Message); }
+            }
+        }
+
+        private async void BtnRejectStudent_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string regId)
+            {
+                try
+                {
+                    var regRef = _dbManager.GetDb.Collection("courseRegistrations").Document(regId);
+                    await regRef.UpdateAsync("status", "rejected");
+                    await LoadPendingRequestsAsync();
+                }
+                catch (Exception ex) { MessageBox.Show("Lỗi từ chối: " + ex.Message); }
+            }
+        }
+
+        private async void BtnAcceptAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (_pendingRequests.Count == 0) return;
+
+            BtnAcceptAll.Content = "Đang xử lý...";
+            BtnAcceptAll.IsEnabled = false;
+
+            try
+            {
+                Google.Cloud.Firestore.WriteBatch batch = _dbManager.GetDb.StartBatch();
+
+                foreach (var req in _pendingRequests)
+                {
+                    var regRef = _dbManager.GetDb.Collection("courseRegistrations").Document(req.RegistrationId);
+                    batch.Update(regRef, "status", "accepted");
+                    batch.Update(regRef, "approvedDate", Google.Cloud.Firestore.FieldValue.ServerTimestamp);
+                }
+
+                _course.StudentCount += _pendingRequests.Count;
+                var courseRef = _dbManager.GetDb.Collection("Courses").Document(_course.Id);
+                batch.Update(courseRef, "StudentCount", _course.StudentCount);
+
+                await batch.CommitAsync();
+
+                TxtStudentCount.Text = _course.StudentCount.ToString();
+                await LoadPendingRequestsAsync();
+
+                MessageBox.Show("Đã duyệt tất cả yêu cầu thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi duyệt tất cả: " + ex.Message);
+            }
+            finally
+            {
+                BtnAcceptAll.Content = "Duyệt tất cả";
+                BtnAcceptAll.IsEnabled = true;
+            }
         }
     }
 }

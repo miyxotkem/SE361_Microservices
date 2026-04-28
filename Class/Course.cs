@@ -37,7 +37,7 @@ namespace e_learning_app
         public string CourseType { get; set; } = "Chuyên ngành";
 
         [FirestoreProperty]
-        public int AttendanceRate { get; set; }
+        public int AssignmentCount { get; set; }
 
         [FirestoreProperty]
         public bool IsActive { get; set; }
