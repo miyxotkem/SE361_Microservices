@@ -27,6 +27,44 @@ namespace e_learning_app.Views
         public string UserId { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }
+        public DateTime RequestedAt { get; set; }
+
+        public string TimeAgo
+        {
+            get
+            {
+                TimeSpan span = DateTime.Now - RequestedAt;
+                if (span.Days > 365) return $"{span.Days / 365} năm trước";
+                if (span.Days > 30) return $"{span.Days / 30} tháng trước";
+                if (span.Days > 0) return $"{span.Days} ngày trước";
+                if (span.Hours > 0) return $"{span.Hours} giờ trước";
+                if (span.Minutes > 0) return $"{span.Minutes} phút trước";
+                return "Vừa xong";
+            }
+        }
+    }
+
+    public class EnrolledStudent
+    {
+        public string RegistrationId { get; set; }
+        public string UserId { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public DateTime ApprovedDate { get; set; }
+    }
+
+    public class GradingItem
+    {
+        public string SubmissionId { get; set; }
+        public string StudentId { get; set; }
+        public string FullName { get; set; }
+        public string FileUrl { get; set; }
+        public string DisplayFileName { get; set; }
+        public DateTime SubmittedAt { get; set; }
+        public bool IsLate { get; set; }
+        public double? Score { get; set; }
+        public string Comment { get; set; }
+        public string StatusColor => Score.HasValue ? "#10B981" : "#F59E0B";
     }
 
     public class DeadlineColorConverter : IValueConverter
@@ -66,10 +104,11 @@ namespace e_learning_app.Views
         private Assignment _editingAssignment = null;
         private Assignment _assignmentToDelete = null;
 
-        // Lưu trữ đường dẫn tệp đính kèm của Giảng viên để upload
         private string _selectedAssignFilePath = "";
-
         private readonly Cloudinary _cloudinary;
+
+        private ObservableCollection<GradingItem> _gradingList = new();
+        private GradingItem _currentGradingItem = null;
 
         public Brush CourseAccentBrush
         {
@@ -110,15 +149,16 @@ namespace e_learning_app.Views
             }
         }
 
-        private async void ApplyRolePermissions() // Thêm chữ async vào đây
+        private async void ApplyRolePermissions()
         {
             bool isInstructor = _course.InstructorId == CurrentUserId;
             BtnMoreActions.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
             BtnAddContent.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
             BtnShowAddAssignment.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
-            BtnManageApprovals.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
 
-            // Nếu là giảng viên thì tự động check số lượng đang chờ để gắn lên Notification Badge
+            BtnManageApprovals.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
+            BtnManageStudents.Visibility = isInstructor ? Visibility.Visible : Visibility.Collapsed;
+
             if (isInstructor)
             {
                 await UpdatePendingBadgeAsync();
@@ -138,7 +178,7 @@ namespace e_learning_app.Views
                 if (count > 0)
                 {
                     BadgeBorder.Visibility = Visibility.Visible;
-                    TxtPendingCount.Text = count > 99 ? "99+" : count.ToString(); // Nếu quá 99 thì ghi 99+
+                    TxtPendingCount.Text = count > 99 ? "99+" : count.ToString();
                 }
                 else
                 {
@@ -176,7 +216,6 @@ namespace e_learning_app.Views
             TxtCourseType.Text = string.IsNullOrWhiteSpace(_course.CourseType) ? "Đại cương" : _course.CourseType;
             TxtDescription.Text = string.IsNullOrWhiteSpace(_course.Description) ? "Chưa có mô tả chi tiết." : _course.Description;
 
-            // Lấy trực tiếp từ Model Course
             TxtStudentCount.Text = _course.StudentCount.ToString();
             TxtAssignmentCount.Text = _course.AssignmentCount.ToString();
 
@@ -658,7 +697,6 @@ namespace e_learning_app.Views
 
                     await _dbManager.GetDb.Collection("Courses").Document(_course.Id).Collection("Assignments").Document(_assignmentToDelete.Id).DeleteAsync();
 
-                    // THÊM MỚI: Giảm biến đếm và lưu lên Firestore
                     if (_course.AssignmentCount > 0)
                     {
                         _course.AssignmentCount--;
@@ -787,12 +825,10 @@ namespace e_learning_app.Views
                     };
                     await collectionRef.AddAsync(newAssignment);
 
-                    // THÊM MỚI: Tăng biến đếm và lưu lên Firestore
                     _course.AssignmentCount++;
                     await _dbManager.GetDb.Collection("Courses").Document(_course.Id).UpdateAsync("AssignmentCount", _course.AssignmentCount);
                 }
 
-                // Cập nhật lại Text đếm bài tập trên UI
                 TxtAssignmentCount.Text = _course.AssignmentCount.ToString();
 
                 LoadAssignments();
@@ -860,8 +896,13 @@ namespace e_learning_app.Views
                 {
                     BtnDownloadAll.IsEnabled = false;
                     TxtSubmissionCount.Text = "Đang kiểm tra số lượng bài nộp...";
+                    TxtInstructorGradingStatus.Text = "Trạng thái: Đang tải...";
                     try
                     {
+                        var assignDoc = await _dbManager.GetDb.Collection("Courses").Document(_course.Id)
+                                                 .Collection("Assignments").Document(_currentViewedAssignment.Id).GetSnapshotAsync();
+                        bool isPublished = assignDoc.ContainsField("IsGradesPublished") && assignDoc.GetValue<bool>("IsGradesPublished");
+
                         var subsRef = _dbManager.GetDb.Collection("Courses").Document(_course.Id)
                                              .Collection("Assignments").Document(_currentViewedAssignment.Id)
                                              .Collection("Submissions");
@@ -869,8 +910,26 @@ namespace e_learning_app.Views
                         int count = snap.Count;
                         TxtSubmissionCount.Text = $"Đã có {count} sinh viên nộp bài.";
                         BtnDownloadAll.IsEnabled = count > 0;
+
+                        int gradedCount = snap.Documents.Count(d => d.ContainsField("Score") && d.GetValue<double?>("Score") != null);
+
+                        if (isPublished)
+                        {
+                            TxtInstructorGradingStatus.Text = $"Trạng thái: Đã công khai ({gradedCount}/{count} bài có điểm)";
+                            TxtInstructorGradingStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+                        }
+                        else if (gradedCount > 0)
+                        {
+                            TxtInstructorGradingStatus.Text = $"Trạng thái: Đã chấm {gradedCount}/{count} bài (Chưa công khai)";
+                            TxtInstructorGradingStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+                        }
+                        else
+                        {
+                            TxtInstructorGradingStatus.Text = $"Trạng thái: Chưa chấm bài";
+                            TxtInstructorGradingStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B"));
+                        }
                     }
-                    catch { TxtSubmissionCount.Text = "Lỗi khi kiểm tra dữ liệu."; }
+                    catch { TxtSubmissionCount.Text = "Lỗi khi kiểm tra dữ liệu."; TxtInstructorGradingStatus.Text = "Trạng thái: Lỗi tải dữ liệu"; }
                 }
                 else
                 {
@@ -879,9 +938,14 @@ namespace e_learning_app.Views
                     BtnDetailSubmit.Content = "Đang kiểm tra...";
                     BtnDetailSubmit.IsEnabled = false;
                     SubmittedFileDetailsPanel.Visibility = Visibility.Collapsed;
+                    StudentGradePanel.Visibility = Visibility.Collapsed;
 
                     try
                     {
+                        var assignDoc = await _dbManager.GetDb.Collection("Courses").Document(_course.Id)
+                                                 .Collection("Assignments").Document(_currentViewedAssignment.Id).GetSnapshotAsync();
+                        bool isPublished = assignDoc.ContainsField("IsGradesPublished") && assignDoc.GetValue<bool>("IsGradesPublished");
+
                         var subRef = _dbManager.GetDb.Collection("Courses").Document(_course.Id)
                                              .Collection("Assignments").Document(_currentViewedAssignment.Id)
                                              .Collection("Submissions").Document(CurrentUserId);
@@ -901,6 +965,13 @@ namespace e_learning_app.Views
                             TxtSubmittedTime.Text = "Thời gian nộp: " + sub.SubmittedAt.ToLocalTime().ToString("HH:mm - dd/MM/yyyy");
 
                             SubmittedFileDetailsPanel.Visibility = Visibility.Visible;
+
+                            if (isPublished && snapshot.ContainsField("Score") && snapshot.GetValue<double?>("Score") != null)
+                            {
+                                StudentGradePanel.Visibility = Visibility.Visible;
+                                TxtStudentScore.Text = $"{snapshot.GetValue<double>("Score")}/10";
+                                TxtStudentComment.Text = snapshot.ContainsField("Comment") ? snapshot.GetValue<string>("Comment") : "Không có nhận xét.";
+                            }
                         }
                         else
                         {
@@ -991,6 +1062,198 @@ namespace e_learning_app.Views
                 {
                     BtnDownloadAll.Content = "Tải về tất cả bài nộp (.zip)";
                     BtnDownloadAll.IsEnabled = true;
+                }
+            }
+        }
+
+        private async void BtnGradeAssignment_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentViewedAssignment == null) return;
+
+            MainScrollViewer.Effect = new BlurEffect { Radius = 10 };
+            GradingDrawer.Visibility = Visibility.Visible;
+            GradingRightPanel.Visibility = Visibility.Collapsed;
+            TxtGradingLoading.Visibility = Visibility.Visible;
+
+            await LoadGradingListAsync();
+        }
+
+        private async Task LoadGradingListAsync()
+        {
+            try
+            {
+                var subsRef = _dbManager.GetDb.Collection("Courses").Document(_course.Id)
+                                     .Collection("Assignments").Document(_currentViewedAssignment.Id)
+                                     .Collection("Submissions");
+                var snap = await subsRef.GetSnapshotAsync();
+
+                _gradingList.Clear();
+
+                foreach (var doc in snap.Documents)
+                {
+                    var sub = doc.ConvertTo<Submission>();
+                    string sId = sub.StudentId;
+
+                    var userDoc = await _dbManager.GetDb.Collection("Users").Document(sId).GetSnapshotAsync();
+                    string name = userDoc.Exists ? userDoc.GetValue<string>("FullName") : "Học viên ẩn danh";
+
+                    _gradingList.Add(new GradingItem
+                    {
+                        SubmissionId = doc.Id,
+                        StudentId = sId,
+                        FullName = name,
+                        FileUrl = sub.FileUrl,
+                        DisplayFileName = GetDisplayNameFromUrl(sub.FileUrl, "submission"),
+                        SubmittedAt = sub.SubmittedAt.ToLocalTime(),
+                        IsLate = sub.IsLate,
+                        Score = doc.ContainsField("Score") ? doc.GetValue<double?>("Score") : null,
+                        Comment = doc.ContainsField("Comment") ? doc.GetValue<string>("Comment") : ""
+                    });
+                }
+
+                GradingItemsList.ItemsSource = null;
+                GradingItemsList.ItemsSource = _gradingList;
+                TxtGradingLoading.Visibility = Visibility.Collapsed;
+
+                if (_gradingList.Count > 0)
+                {
+                    GradingItemsList.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải danh sách chấm bài: " + ex.Message);
+            }
+        }
+
+        private void GradingItemsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (GradingItemsList.SelectedItem is GradingItem item)
+            {
+                _currentGradingItem = item;
+                GradingRightPanel.Visibility = Visibility.Visible;
+
+                TxtGradeStudentName.Text = item.FullName;
+                TxtGradeStatus.Text = item.IsLate ? "Nộp trễ" : "Nộp đúng hạn";
+                TxtGradeStatus.Foreground = item.IsLate ? Brushes.Red : Brushes.Green;
+                TxtGradeFileName.Text = item.DisplayFileName;
+
+                InputScore.Text = item.Score?.ToString() ?? "";
+                InputComment.Text = item.Comment ?? "";
+            }
+            else
+            {
+                GradingRightPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private async void BtnSaveAndNext_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentGradingItem == null) return;
+
+            double? score = null;
+            if (!string.IsNullOrWhiteSpace(InputScore.Text))
+            {
+                if (double.TryParse(InputScore.Text, out double s) && s >= 0 && s <= 10)
+                {
+                    score = s;
+                }
+                else
+                {
+                    MessageBox.Show("Điểm phải là số từ 0 đến 10!", "Lỗi nhập liệu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
+
+            string comment = InputComment.Text;
+
+            try
+            {
+                BtnSaveAndNext.IsEnabled = false;
+                BtnSaveAndNext.Content = "Đang lưu...";
+
+                var subRef = _dbManager.GetDb.Collection("Courses").Document(_course.Id)
+                                     .Collection("Assignments").Document(_currentViewedAssignment.Id)
+                                     .Collection("Submissions").Document(_currentGradingItem.SubmissionId);
+
+                var updates = new Dictionary<string, object>
+                {
+                    { "Score", score },
+                    { "Comment", comment }
+                };
+
+                await subRef.UpdateAsync(updates);
+
+                _currentGradingItem.Score = score;
+                _currentGradingItem.Comment = comment;
+                GradingItemsList.Items.Refresh();
+
+                int currentIndex = GradingItemsList.SelectedIndex;
+                if (currentIndex >= 0 && currentIndex < _gradingList.Count - 1)
+                {
+                    GradingItemsList.SelectedIndex = currentIndex + 1;
+                }
+                else
+                {
+                    MessageBox.Show("Đã chấm xong bài cuối cùng trong danh sách!", "Hoàn tất", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi lưu điểm: " + ex.Message);
+            }
+            finally
+            {
+                BtnSaveAndNext.IsEnabled = true;
+                BtnSaveAndNext.Content = "Lưu & Tiếp tục";
+            }
+        }
+
+        private void CloseGradingDrawer_Click(object sender, RoutedEventArgs e)
+        {
+            GradingDrawer.Visibility = Visibility.Collapsed;
+            MainScrollViewer.Effect = null;
+            _currentGradingItem = null;
+            AssignmentItem_Click(null, null);
+        }
+
+        private void BtnDownloadCurrentGradeFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentGradingItem != null && !string.IsNullOrEmpty(_currentGradingItem.FileUrl))
+            {
+                Process.Start(new ProcessStartInfo { FileName = _currentGradingItem.FileUrl, UseShellExecute = true });
+            }
+        }
+
+        private async void BtnPublishGrades_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentViewedAssignment == null) return;
+
+            var result = MessageBox.Show("Bạn có chắc chắn muốn công khai điểm cho toàn bộ sinh viên?\nSinh viên sẽ nhận được thông báo và xem được điểm ngay lập tức.", "Công khai điểm", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    var btn = sender as Button;
+                    if (btn != null) { btn.Content = "Đang xử lý..."; btn.IsEnabled = false; }
+
+                    var assignRef = _dbManager.GetDb.Collection("Courses").Document(_course.Id)
+                                         .Collection("Assignments").Document(_currentViewedAssignment.Id);
+
+                    await assignRef.UpdateAsync("IsGradesPublished", true);
+
+                    TxtInstructorGradingStatus.Text = "Trạng thái: Đã công khai";
+                    TxtInstructorGradingStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+
+                    MessageBox.Show("Đã công khai điểm thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    if (btn != null) { btn.Content = "Công khai điểm"; btn.IsEnabled = true; }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Lỗi khi công khai điểm: " + ex.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    var btn = sender as Button;
+                    if (btn != null) { btn.Content = "Công khai điểm"; btn.IsEnabled = true; }
                 }
             }
         }
@@ -1258,9 +1521,6 @@ namespace e_learning_app.Views
             return null;
         }
 
-        // ==========================================
-        // LOGIC QUẢN LÝ DUYỆT HỌC VIÊN (INSTRUCTOR)
-        // ==========================================
         private ObservableCollection<PendingRequest> _pendingRequests = new();
 
         private async void BtnManageApprovals_Click(object sender, RoutedEventArgs e)
@@ -1280,7 +1540,6 @@ namespace e_learning_app.Views
         {
             try
             {
-                // 1. Tải danh sách từ Firebase
                 var snap = await _dbManager.GetDb.Collection("courseRegistrations")
                     .WhereEqualTo("courseId", _course.Id)
                     .WhereEqualTo("status", "pending")
@@ -1296,34 +1555,40 @@ namespace e_learning_app.Views
                     string name = userDoc.Exists ? userDoc.GetValue<string>("FullName") : "Học viên ẩn danh";
                     string email = userDoc.Exists ? userDoc.GetValue<string>("Email") : "";
 
+                    DateTime requestedAt = DateTime.Now;
+                    if (doc.ContainsField("createdAt"))
+                    {
+                        requestedAt = doc.GetValue<Google.Cloud.Firestore.Timestamp>("createdAt").ToDateTime().ToLocalTime();
+                    }
+                    else if (doc.ContainsField("requestDate"))
+                    {
+                        requestedAt = doc.GetValue<Google.Cloud.Firestore.Timestamp>("requestDate").ToDateTime().ToLocalTime();
+                    }
+
                     _pendingRequests.Add(new PendingRequest
                     {
                         RegistrationId = doc.Id,
                         UserId = uId,
                         FullName = name,
-                        Email = email
+                        Email = email,
+                        RequestedAt = requestedAt
                     });
                 }
 
-                // 2. Cập nhật ItemsSource
                 PendingRequestsList.ItemsSource = _pendingRequests;
 
-                // 3. LOGIC HIỂN THỊ THÔNG BÁO TRỐNG
                 if (_pendingRequests.Count > 0)
                 {
-                    TxtNoPendingRequests.Visibility = Visibility.Collapsed; // Ẩn chữ "Không có yêu cầu"
-                    BtnAcceptAll.Visibility = Visibility.Visible;           // Hiện nút Duyệt tất cả
+                    TxtNoPendingRequests.Visibility = Visibility.Collapsed;
+                    BtnAcceptAll.Visibility = Visibility.Visible;
 
-                    // Cập nhật Badge thông báo
                     BadgeBorder.Visibility = Visibility.Visible;
                     TxtPendingCount.Text = _pendingRequests.Count > 99 ? "99+" : _pendingRequests.Count.ToString();
                 }
                 else
                 {
-                    TxtNoPendingRequests.Visibility = Visibility.Visible;   // HIỆN chữ "Không có yêu cầu"
-                    BtnAcceptAll.Visibility = Visibility.Collapsed;         // Ẩn nút Duyệt tất cả
-
-                    // Ẩn Badge thông báo
+                    TxtNoPendingRequests.Visibility = Visibility.Visible;
+                    BtnAcceptAll.Visibility = Visibility.Collapsed;
                     BadgeBorder.Visibility = Visibility.Collapsed;
                 }
             }
@@ -1407,6 +1672,107 @@ namespace e_learning_app.Views
             {
                 BtnAcceptAll.Content = "Duyệt tất cả";
                 BtnAcceptAll.IsEnabled = true;
+            }
+        }
+
+        private ObservableCollection<EnrolledStudent> _enrolledStudents = new();
+
+        private async void BtnManageStudents_Click(object sender, RoutedEventArgs e)
+        {
+            MainScrollViewer.Effect = new BlurEffect { Radius = 10 };
+            ManageStudentsDrawer.Visibility = Visibility.Visible;
+            await LoadEnrolledStudentsAsync();
+        }
+
+        private void CloseManageStudentsDrawer_Click(object sender, RoutedEventArgs e)
+        {
+            ManageStudentsDrawer.Visibility = Visibility.Collapsed;
+            MainScrollViewer.Effect = null;
+        }
+
+        private async Task LoadEnrolledStudentsAsync()
+        {
+            try
+            {
+                var snap = await _dbManager.GetDb.Collection("courseRegistrations")
+                    .WhereEqualTo("courseId", _course.Id)
+                    .WhereEqualTo("status", "accepted")
+                    .GetSnapshotAsync();
+
+                _enrolledStudents.Clear();
+
+                foreach (var doc in snap.Documents)
+                {
+                    string uId = doc.GetValue<string>("userId");
+
+                    var userDoc = await _dbManager.GetDb.Collection("Users").Document(uId).GetSnapshotAsync();
+                    string name = userDoc.Exists ? userDoc.GetValue<string>("FullName") : "Học viên ẩn danh";
+                    string email = userDoc.Exists ? userDoc.GetValue<string>("Email") : "";
+
+                    DateTime approvedDate = DateTime.Now;
+                    if (doc.ContainsField("approvedDate"))
+                    {
+                        approvedDate = doc.GetValue<Google.Cloud.Firestore.Timestamp>("approvedDate").ToDateTime().ToLocalTime();
+                    }
+
+                    _enrolledStudents.Add(new EnrolledStudent
+                    {
+                        RegistrationId = doc.Id,
+                        UserId = uId,
+                        FullName = name,
+                        Email = email,
+                        ApprovedDate = approvedDate
+                    });
+                }
+
+                EnrolledStudentsList.ItemsSource = _enrolledStudents;
+                TxtNoEnrolledStudents.Visibility = _enrolledStudents.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+
+                _course.StudentCount = _enrolledStudents.Count;
+                TxtStudentCount.Text = _course.StudentCount.ToString();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải danh sách sinh viên: " + ex.Message);
+            }
+        }
+
+        private async void BtnRemoveStudent_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string regId)
+            {
+                var result = MessageBox.Show("Bạn có chắc chắn muốn loại bỏ sinh viên này khỏi lớp? Trạng thái sẽ được chuyển thành 'Từ chối'.", "Xác nhận loại bỏ", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    btn.IsEnabled = false;
+
+                    try
+                    {
+                        var regRef = _dbManager.GetDb.Collection("courseRegistrations").Document(regId);
+                        await regRef.UpdateAsync(new Dictionary<string, object> {
+                    { "status", "rejected" },
+                    { "removedDate", Google.Cloud.Firestore.FieldValue.ServerTimestamp }
+                });
+
+                        if (_course.StudentCount > 0)
+                        {
+                            _course.StudentCount--;
+                        }
+
+                        await _dbManager.GetDb.Collection("Courses").Document(_course.Id).UpdateAsync("StudentCount", _course.StudentCount);
+
+                        TxtStudentCount.Text = _course.StudentCount.ToString();
+
+                        await LoadEnrolledStudentsAsync();
+
+                        MessageBox.Show("Đã loại bỏ sinh viên và chặn quyền truy cập thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Lỗi khi xử lý: " + ex.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                        btn.IsEnabled = true;
+                    }
+                }
             }
         }
     }

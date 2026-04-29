@@ -244,9 +244,31 @@
                         </StackPanel>
                     </UniformGrid>
 
-                    <Grid HorizontalAlignment="Left" Margin="0,0,0,30" Visibility="{Binding Visibility, ElementName=BtnManageApprovals}">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,30">
+                        <Grid Visibility="{Binding Visibility, ElementName=BtnManageApprovals}">
+                            <Button x:Name="BtnManageApprovals" Height="36" Background="#F59E0B" Foreground="White" Cursor="Hand" Visibility="Collapsed" Padding="15,0" Click="BtnManageApprovals_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                                <TextBlock Text="Duyệt yêu cầu tham gia lớp" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </Button>
 
-                        <Button x:Name="BtnManageApprovals" Height="36" Background="#F59E0B" Foreground="White" Cursor="Hand" Visibility="Collapsed" Padding="15,0" Click="BtnManageApprovals_Click">
+                            <Border x:Name="BadgeBorder" Background="#EF4444" CornerRadius="10" MinWidth="22" Height="22" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    Margin="0,-8,-8,0" Visibility="Collapsed" IsHitTestVisible="False">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.25" Color="Black"/>
+                                </Border.Effect>
+                                <TextBlock x:Name="TxtPendingCount" Text="0" Foreground="White" FontSize="11" FontWeight="Bold" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5,0"/>
+                            </Border>
+                        </Grid>
+
+                        <Button x:Name="BtnManageStudents" Height="36" Background="#0EA5E9" Foreground="White" Cursor="Hand" Visibility="Collapsed" Padding="15,0" Margin="15,0,0,0" Click="BtnManageStudents_Click">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border Background="{TemplateBinding Background}" CornerRadius="10">
@@ -254,20 +276,9 @@
                                     </Border>
                                 </ControlTemplate>
                             </Button.Template>
-                            <TextBlock Text="Duyệt yêu cầu tham gia lớp" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="Quản lý sinh viên" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </Button>
-
-                        <Border x:Name="BadgeBorder" Background="#EF4444" CornerRadius="10" MinWidth="22" Height="22" 
-                                HorizontalAlignment="Right" VerticalAlignment="Top" 
-                                Margin="0,-8,-8,0" Visibility="Collapsed" IsHitTestVisible="False">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.25" Color="Black"/>
-                            </Border.Effect>
-                            <TextBlock x:Name="TxtPendingCount" Text="0" Foreground="White" FontSize="11" FontWeight="Bold" 
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5,0"/>
-                        </Border>
-
-                    </Grid>
+                    </StackPanel>
 
                     <Separator Margin="0,0,0,30" Background="#F1F5F9"/>
 
@@ -881,11 +892,12 @@
 
                             <StackPanel x:Name="InstructorManageArea" Visibility="Collapsed">
                                 <Separator Margin="0,0,0,20" Background="#F1F5F9"/>
-                                <TextBlock Text="Quản lý bài nộp" FontSize="16" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,0,0,15"/>
+                                <TextBlock Text="Quản lý &amp; Chấm điểm" FontSize="16" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,0,0,15"/>
                                 <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="12" Padding="20">
                                     <StackPanel>
+                                        <TextBlock x:Name="TxtInstructorGradingStatus" Text="Trạng thái: Đang kiểm tra..." FontSize="14" Foreground="#F59E0B" Margin="0,0,0,15" FontWeight="SemiBold"/>
                                         <TextBlock x:Name="TxtSubmissionCount" Text="Đang tải dữ liệu..." FontSize="14" Foreground="#475569" Margin="0,0,0,15"/>
-                                        <Button x:Name="BtnDownloadAll" Content="Tải về tất cả bài nộp (.zip)" Height="45" Background="#3B82F6" Foreground="White" FontSize="15" FontWeight="SemiBold" Cursor="Hand" Click="BtnDownloadAll_Click">
+                                        <Button x:Name="BtnDownloadAll" Content="Tải về tất cả bài nộp (.zip)" Height="45" Background="#3B82F6" Foreground="White" FontSize="15" FontWeight="SemiBold" Cursor="Hand" Click="BtnDownloadAll_Click" Margin="0,0,0,10">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border Background="{TemplateBinding Background}" CornerRadius="10">
@@ -894,6 +906,32 @@
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button x:Name="BtnGradeAssignment" Grid.Column="0" Content="Chấm bài &amp; Nhận xét" Height="45" Background="White" Foreground="#8B5CF6" BorderBrush="#8B5CF6" BorderThickness="1.5" FontSize="15" FontWeight="SemiBold" Cursor="Hand" Click="BtnGradeAssignment_Click">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <Button x:Name="BtnPublishGrades" Grid.Column="2" Content="Công khai điểm" Height="45" Background="White" Foreground="#F43F5E" BorderBrush="#F43F5E" BorderThickness="1.5" FontSize="15" FontWeight="SemiBold" Cursor="Hand" Click="BtnPublishGrades_Click">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -907,6 +945,18 @@
                                         <TextBlock x:Name="DetailSubmissionStatus" Text="Chưa nộp" FontSize="14" FontWeight="SemiBold" Foreground="#EF4444"/>
                                     </StackPanel>
                                 </Grid>
+
+                                <Border x:Name="StudentGradePanel" Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,15" Visibility="Collapsed">
+                                    <StackPanel>
+                                        <TextBlock Text="Kết quả chấm điểm" FontSize="16" FontWeight="Bold" Foreground="#10B981" Margin="0,0,0,10"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                            <TextBlock Text="Điểm số: " FontSize="14" FontWeight="SemiBold" Foreground="#1E293B"/>
+                                            <TextBlock x:Name="TxtStudentScore" Text="10/10" FontSize="14" FontWeight="Bold" Foreground="#10B981"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Nhận xét:" FontSize="14" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,5,0,2"/>
+                                        <TextBlock x:Name="TxtStudentComment" Text="Bài làm rất tốt!" FontSize="14" Foreground="#475569" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
 
                                 <Border x:Name="SubmittedFileDetailsPanel" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,15" Visibility="Collapsed">
                                     <Grid>
@@ -949,7 +999,6 @@
 
         <Grid x:Name="ApprovalDrawer" Visibility="Collapsed">
             <Border Background="#40000000" MouseLeftButtonDown="CloseApprovalDrawer_Click"/>
-
             <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Background="White" Width="500" CornerRadius="20,0,0,20">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="30" ShadowDepth="-5" Opacity="0.1" Color="Black"/>
@@ -999,7 +1048,11 @@
 
                                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
                                                     <TextBlock Text="{Binding FullName}" FontSize="15" FontWeight="SemiBold" Foreground="#1E293B" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Text="{Binding Email}" FontSize="13" Foreground="#64748B" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                        <TextBlock Text="{Binding Email}" FontSize="13" Foreground="#64748B" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text=" • " FontSize="13" Foreground="#CBD5E1"/>
+                                                        <TextBlock Text="{Binding TimeAgo}" FontSize="13" Foreground="#94A3B8" FontStyle="Italic"/>
+                                                    </StackPanel>
                                                 </StackPanel>
 
                                                 <Button Grid.Column="1" Content="✔" Width="36" Height="36" Background="#10B981" Foreground="White" FontWeight="Bold" Cursor="Hand" Margin="0,0,8,0" Tag="{Binding RegistrationId}" Click="BtnAcceptStudent_Click">
@@ -1028,6 +1081,168 @@
                             </ItemsControl>
                         </StackPanel>
                     </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="ManageStudentsDrawer" Visibility="Collapsed">
+            <Border Background="#40000000" MouseLeftButtonDown="CloseManageStudentsDrawer_Click"/>
+            <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Background="White" Width="500" CornerRadius="20,0,0,20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="30" ShadowDepth="-5" Opacity="0.1" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="30,30,30,15">
+                        <Grid>
+                            <TextBlock Text="Danh sách sinh viên" FontSize="22" FontWeight="Bold" Foreground="#1E293B"/>
+                            <Button Content="✕" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" FontSize="18" Foreground="#64748B" Cursor="Hand" Click="CloseManageStudentsDrawer_Click"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1" Margin="30,0,30,30" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock x:Name="TxtNoEnrolledStudents" 
+                                       Text="Chưa có sinh viên nào tham gia lớp học." 
+                                       Foreground="#94A3B8" FontSize="14" 
+                                       HorizontalAlignment="Center" Margin="0,40,0,0" 
+                                       Visibility="Collapsed"/>
+
+                            <ItemsControl x:Name="EnrolledStudentsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="12" Padding="15" Margin="0,0,0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <TextBlock Text="{Binding FullName}" FontSize="15" FontWeight="SemiBold" Foreground="#1E293B" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Email}" FontSize="13" Foreground="#64748B" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                                </StackPanel>
+
+                                                <Button Grid.Column="1" Content="🗑️" Width="36" Height="36" Background="#FEF2F2" Foreground="#EF4444" FontWeight="Bold" FontSize="16" Cursor="Hand" Tag="{Binding RegistrationId}" Click="BtnRemoveStudent_Click" ToolTip="Xóa sinh viên khỏi lớp">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="GradingDrawer" Visibility="Collapsed">
+            <Border Background="#40000000" MouseLeftButtonDown="CloseGradingDrawer_Click"/>
+            <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Background="#F8FAFC" Width="800" CornerRadius="20,0,0,20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="30" ShadowDepth="-5" Opacity="0.1" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="70"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="White" CornerRadius="20,0,0,0" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                        <Grid Margin="30,0">
+                            <TextBlock Text="Chấm bài &amp; Nhận xét" FontSize="20" FontWeight="Bold" Foreground="#1E293B" VerticalAlignment="Center"/>
+                            <Button Content="✕" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" FontSize="18" Foreground="#64748B" Cursor="Hand" Click="CloseGradingDrawer_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="White" BorderBrush="#E2E8F0" BorderThickness="0,0,1,0">
+                            <Grid>
+                                <TextBlock x:Name="TxtGradingLoading" Text="Đang tải danh sách..." HorizontalAlignment="Center" Margin="0,30,0,0" Foreground="#94A3B8"/>
+                                <ListBox x:Name="GradingItemsList" Background="Transparent" BorderThickness="0" SelectionChanged="GradingItemsList_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="15,10" Background="Transparent" BorderBrush="#F1F5F9" BorderThickness="0,0,0,1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding FullName}" FontWeight="SemiBold" FontSize="14" Foreground="#1E293B" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding DisplayFileName}" FontSize="12" Foreground="#64748B" TextTrimming="CharacterEllipsis" MaxWidth="220" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                    <Ellipse Grid.Column="1" Width="12" Height="12" Fill="{Binding StatusColor}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+
+                        <Grid x:Name="GradingRightPanel" Grid.Column="1" Margin="30" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock x:Name="TxtGradeStudentName" Text="Tên Sinh Viên" FontSize="24" FontWeight="Bold" Foreground="#1E293B" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="TxtGradeStatus" Text="Nộp đúng hạn" FontSize="14" FontWeight="SemiBold" Foreground="#10B981" Margin="0,5,0,20"/>
+
+                                <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,25">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="📄" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                                        <TextBlock x:Name="TxtGradeFileName" Grid.Column="1" Text="file_bai_tap.pdf" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <Button Grid.Column="2" Content="Tải xuống" Background="#EFF6FF" Foreground="#3B82F6" FontWeight="SemiBold" Padding="15,8" BorderThickness="0" Cursor="Hand" Click="BtnDownloadCurrentGradeFile_Click">
+    <Button.Template>
+        <ControlTemplate TargetType="Button">
+            <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+            </Border>
+        </ControlTemplate>
+    </Button.Template>
+</Button>
+                                    </Grid>
+                                </Border>
+
+                                <TextBlock Text="Điểm số (0 - 10)" Foreground="#64748B" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="InputScore" FontSize="16" FontWeight="Bold" Padding="15,10" BorderBrush="#E2E8F0" BorderThickness="1" Background="White" Width="120" HorizontalAlignment="Left" Margin="0,0,0,20"/>
+
+                                <TextBlock Text="Nhận xét" Foreground="#64748B" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="InputComment" TextWrapping="Wrap" AcceptsReturn="True" Height="150" Padding="15" BorderBrush="#E2E8F0" BorderThickness="1" Background="White" VerticalContentAlignment="Top"/>
+
+                                <Button x:Name="BtnSaveAndNext" Content="Lưu &amp; Tiếp tục" Height="45" Background="#3B82F6" Foreground="White" FontSize="15" FontWeight="Bold" Margin="0,30,0,0" Cursor="Hand" Click="BtnSaveAndNext_Click">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
