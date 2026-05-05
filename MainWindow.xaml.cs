@@ -1,4 +1,4 @@
-﻿using e_learning_app.Views;
+using e_learning_app.Views;
 using Google.Cloud.Firestore;
 using System;
 using System.Windows;
@@ -36,6 +36,11 @@ namespace e_learning_app
         private void NavDashboard_Click(object sender, RoutedEventArgs e)
         {
             MainContentArea.Content = new TeacherDashboardView(_dbManager);
+        }
+
+        private void NavSchedule_Click(object sender, RoutedEventArgs e)
+        {
+            MainContentArea.Content = new TeachingScheduleView();
         }
 
         private void NavClasses_Click(object sender, RoutedEventArgs e)
