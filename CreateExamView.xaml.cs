@@ -14,11 +14,13 @@ namespace e_learning_app
         private bool _isInitialized = false;
         private List<Course> _allCourses = new();
         private Course _selectedCourse = null;
+        private Exam _existingExam = null;
 
-        public CreateExamView(DatabaseManager dbManager)
+        public CreateExamView(DatabaseManager dbManager, Exam existingExam = null)
         {
             InitializeComponent();
             _dbManager = dbManager;
+            _existingExam = existingExam;
             _isInitialized = true;
             UpdatePreview();
             Loaded += async (s, e) => await LoadCoursesAsync();
@@ -52,13 +54,57 @@ namespace e_learning_app
                 
                 CbClass.ItemsSource = displayList;
                 _isInitialized = true;
-                CbClass.SelectedIndex = 0;
+                
+                if (_existingExam != null)
+                {
+                    int index = _allCourses.FindIndex(c => c.Id == _existingExam.ClassId);
+                    CbClass.SelectedIndex = index >= 0 ? index : 0;
+
+                    TxtTitle.Text = _existingExam.Title;
+                    TxtDescription.Text = _existingExam.Description;
+                    TxtTotalQuestions.Text = _existingExam.TotalQuestions.ToString();
+
+                    string typeStr = _existingExam.Type switch {
+                        ExamType.Midterm => "Giữa kỳ",
+                        ExamType.Final => "Cuối kỳ",
+                        ExamType.Practice => "Luyện tập",
+                        ExamType.Assignment => "Bài tập",
+                        _ => "Quiz"
+                    };
+                    SelectComboBoxItemByContent(CbExamType, typeStr);
+                    SelectComboBoxItemByContent(CbTimeLimit, _existingExam.TimeLimitMinutes.ToString());
+                    SelectComboBoxItemByContent(CbPassingScore, _existingExam.PassingScore.ToString() + "%");
+
+                    if (ChkPublished != null) ChkPublished.IsChecked = _existingExam.IsPublished;
+                    if (ChkAllowReview != null) ChkAllowReview.IsChecked = _existingExam.AllowReview;
+                    if (ChkRandomize != null) ChkRandomize.IsChecked = _existingExam.RandomizeQuestions;
+                    if (ChkShowScore != null) ChkShowScore.IsChecked = _existingExam.ShowScore;
+                    if (ChkMultipleAttempts != null) ChkMultipleAttempts.IsChecked = _existingExam.AllowMultipleAttempts;
+                }
+                else
+                {
+                    CbClass.SelectedIndex = 0;
+                }
+                
                 UpdatePreview();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"❌ LoadCoursesAsync: {ex.Message}");
                 CbClass.Items.Add($"❌ Lỗi: {ex.Message}");
+            }
+        }
+
+        private void SelectComboBoxItemByContent(ComboBox cb, string contentPart)
+        {
+            if (cb == null) return;
+            foreach (var item in cb.Items)
+            {
+                if (item is ComboBoxItem cbi && cbi.Content != null && cbi.Content.ToString().Contains(contentPart))
+                {
+                    cb.SelectedItem = item;
+                    return;
+                }
             }
         }
 

@@ -95,11 +95,14 @@
                         </Border>
                     </StackPanel>
 
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16">
-                        <StackPanel x:Name="QuestionsListPanel">
-                            <!-- Items will be generated dynamically -->
-                        </StackPanel>
-                    </ScrollViewer>
+                    <Grid Grid.Row="1" Margin="0,0,0,16">
+                        <!-- Questions List -->
+                        <ScrollViewer x:Name="ManualListScroller" VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="QuestionsListPanel">
+                                <!-- Items will be generated dynamically -->
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
 
                     <Button Grid.Row="2" x:Name="BtnSubmit" Content="✅ Hoàn Tất Tạo Bài Thi" Height="50" Background="#10B981" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="BtnSubmit_Click" FontSize="14">
                         <Button.Template>
@@ -128,17 +131,25 @@
                         <!-- Import Section -->
                         <Border Background="#F8FAFC" CornerRadius="12" Padding="16" Margin="0,0,0,24" BorderBrush="#E2E8F0" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="📥 Import từ file TXT" FontWeight="Bold" FontSize="14" Foreground="#1E293B" Margin="0,0,0,8"/>
-                                <TextBlock Text="Định dạng: Dòng 1 (Câu hỏi), Dòng 2-5 (A, B, C, D), Dòng 6 (0,1,2,3 - Đáp án)" FontSize="11" Foreground="#64748B" Margin="0,0,0,12" TextWrapping="Wrap"/>
-                                <Button x:Name="BtnImport" Content="Chọn file..." Height="36" Background="#F1F5F9" Foreground="#475569" FontWeight="SemiBold" Cursor="Hand" Click="BtnImport_Click" BorderBrush="#CBD5E1" BorderThickness="1">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                <Grid Margin="0,0,0,12">
+                                    <TextBlock Text="📥 Import từ Excel (.xlsx)" FontWeight="Bold" FontSize="14" Foreground="#1E293B" VerticalAlignment="Center"/>
+                                    <Button x:Name="BtnDownloadTemplate" Content="⬇️ Tải file mẫu" HorizontalAlignment="Right" Background="Transparent" Foreground="#3B82F6" FontWeight="SemiBold" BorderThickness="0" Cursor="Hand" Click="BtnDownloadTemplate_Click"/>
+                                </Grid>
+                                
+                                <!-- Drag Drop Area -->
+                                <Border x:Name="DropZone" BorderBrush="#CBD5E1" BorderThickness="2" CornerRadius="8" Height="100" Background="White" AllowDrop="True" DragEnter="DropZone_DragEnter" DragLeave="DropZone_DragLeave" Drop="DropZone_Drop" MouseLeftButtonDown="DropZone_MouseLeftButtonDown" Cursor="Hand">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock x:Name="TxtDropIcon" Text="📄" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                        <TextBlock Text="Kéo thả file Excel vào đây" FontWeight="SemiBold" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                        <TextBlock Text="hoặc click để chọn file" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Progress Panel -->
+                                <StackPanel x:Name="ProgressPanel" Visibility="Collapsed" Margin="0,16,0,0">
+                                    <TextBlock x:Name="TxtImportStatus" Text="Đang xử lý dữ liệu..." FontSize="12" Foreground="#64748B" Margin="0,0,0,4"/>
+                                    <ProgressBar x:Name="ImportProgress" Height="6" Minimum="0" Maximum="100" Value="0" Foreground="#10B981" BorderThickness="0"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
@@ -160,7 +171,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <RadioButton x:Name="RbOptA" Content="A" IsChecked="True" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
+                            <RadioButton x:Name="RbOptA" GroupName="CorrectAnswer" Content="A" IsChecked="True" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
                             <TextBox Grid.Column="1" x:Name="TxtOptA" Style="{StaticResource ModernTextBox}" Height="40"/>
                         </Grid>
 
@@ -169,7 +180,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <RadioButton x:Name="RbOptB" Content="B" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
+                            <RadioButton x:Name="RbOptB" GroupName="CorrectAnswer" Content="B" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
                             <TextBox Grid.Column="1" x:Name="TxtOptB" Style="{StaticResource ModernTextBox}" Height="40"/>
                         </Grid>
 
@@ -178,7 +189,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <RadioButton x:Name="RbOptC" Content="C" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
+                            <RadioButton x:Name="RbOptC" GroupName="CorrectAnswer" Content="C" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
                             <TextBox Grid.Column="1" x:Name="TxtOptC" Style="{StaticResource ModernTextBox}" Height="40"/>
                         </Grid>
 
@@ -187,7 +198,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <RadioButton x:Name="RbOptD" Content="D" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
+                            <RadioButton x:Name="RbOptD" GroupName="CorrectAnswer" Content="D" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
                             <TextBox Grid.Column="1" x:Name="TxtOptD" Style="{StaticResource ModernTextBox}" Height="40"/>
                         </Grid>
 

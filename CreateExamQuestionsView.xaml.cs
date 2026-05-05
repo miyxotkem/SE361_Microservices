@@ -1,13 +1,58 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using ClosedXML.Excel;
 using e_learning_app.Class;
 
 namespace e_learning_app
 {
+    public class ImportQuestionItem : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged(string prop) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+
+        private string _content;
+        public string Content { get => _content; set { _content = value; Validate(); OnPropertyChanged(nameof(Content)); } }
+        
+        private string _optA;
+        public string OptA { get => _optA; set { _optA = value; Validate(); OnPropertyChanged(nameof(OptA)); } }
+        
+        private string _optB;
+        public string OptB { get => _optB; set { _optB = value; Validate(); OnPropertyChanged(nameof(OptB)); } }
+        
+        private string _optC;
+        public string OptC { get => _optC; set { _optC = value; Validate(); OnPropertyChanged(nameof(OptC)); } }
+        
+        private string _optD;
+        public string OptD { get => _optD; set { _optD = value; Validate(); OnPropertyChanged(nameof(OptD)); } }
+        
+        private string _correctAns;
+        public string CorrectAns { get => _correctAns; set { _correctAns = value; Validate(); OnPropertyChanged(nameof(CorrectAns)); } }
+
+        private bool _isValid;
+        public bool IsValid { get => _isValid; set { _isValid = value; OnPropertyChanged(nameof(IsValid)); } }
+
+        private string _errorMessage;
+        public string ErrorMessage { get => _errorMessage; set { _errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); } }
+
+        public void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(Content)) { IsValid = false; ErrorMessage = "Lỗi: Thiếu nội dung"; return; }
+            if (string.IsNullOrWhiteSpace(OptA) || string.IsNullOrWhiteSpace(OptB) || string.IsNullOrWhiteSpace(OptC) || string.IsNullOrWhiteSpace(OptD)) { IsValid = false; ErrorMessage = "Lỗi: Thiếu đáp án"; return; }
+            var ans = CorrectAns?.Trim().ToUpper();
+            if (ans != "A" && ans != "B" && ans != "C" && ans != "D") { IsValid = false; ErrorMessage = "Lỗi: Đ.án đúng phải là A,B,C,D"; return; }
+            
+            IsValid = true;
+            ErrorMessage = "Hợp lệ";
+        }
+    }
+
     public partial class CreateExamQuestionsView : UserControl
     {
         private readonly DatabaseManager _dbManager;
@@ -28,10 +73,7 @@ namespace e_learning_app
         {
             if (Window.GetWindow(this) is MainWindow mw)
             {
-                // Note: Trở lại màn hình CreateExamView có thể làm mất dữ liệu nhập dở, 
-                // nhưng hiện tại ta có thể quay lại ExamManagementView hoặc tạo mới lại.
-                // Ở đây ta quay về Quản lý bài thi để đơn giản hóa.
-                mw.NavigateTo(new ExamManagementView(_dbManager));
+                mw.NavigateTo(new CreateExamView(_dbManager, _exam));
             }
         }
 
@@ -39,7 +81,7 @@ namespace e_learning_app
         {
             if (_questions.Count == 0)
             {
-                MessageBox.Show("Vui lòng thêm ít nhất 1 câu hỏi cho bài thi!", "Cảnh báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Vui lòng thêm ít nhất 1 câu hỏi hợp lệ cho bài thi!", "Cảnh báo", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -48,7 +90,6 @@ namespace e_learning_app
                 BtnSubmit.IsEnabled = false;
                 BtnSubmit.Content = "⏳ Đang lưu dữ liệu...";
 
-                // Cập nhật lại số lượng câu hỏi và danh sách ID
                 _exam.TotalQuestions = _questions.Count;
                 _exam.QuestionIds.Clear();
                 foreach (var q in _questions)
@@ -60,7 +101,7 @@ namespace e_learning_app
 
                 if (success)
                 {
-                    MessageBox.Show($"✅ Tạo bài thi \"{_exam.Title}\" với {_questions.Count} câu hỏi thành công!", "Thành Công", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"✅ Tạo bài thi thành công!\nTổng cộng: {_questions.Count} câu hỏi.", "Thành Công", MessageBoxButton.OK, MessageBoxImage.Information);
                     if (Window.GetWindow(this) is MainWindow mw)
                     {
                         mw.NavigateTo(new ExamManagementView(_dbManager));
@@ -111,77 +152,195 @@ namespace e_learning_app
             _questions.Add(newQuestion);
             RefreshQuestionsList();
 
-            // Clear form
             TxtContent.Clear();
             TxtOptA.Clear(); TxtOptB.Clear(); TxtOptC.Clear(); TxtOptD.Clear();
             RbOptA.IsChecked = true;
             TxtPoints.Text = "1";
         }
 
-        private void BtnImport_Click(object sender, RoutedEventArgs e)
+        // --- NEW EXCEL IMPORT LOGIC ---
+
+        private void BtnDownloadTemplate_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new Microsoft.Win32.OpenFileDialog
+            var dlg = new Microsoft.Win32.SaveFileDialog
             {
-                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-                Title = "Chọn file câu hỏi (TXT)"
+                FileName = "Exam_Template",
+                DefaultExt = ".xlsx",
+                Filter = "Excel files (*.xlsx)|*.xlsx"
             };
 
             if (dlg.ShowDialog() == true)
             {
-                try
+                using (var workbook = new XLWorkbook())
                 {
-                    string[] lines = File.ReadAllLines(dlg.FileName);
-                    int addedCount = 0;
+                    var worksheet = workbook.Worksheets.Add("Questions");
+                    
+                    // Header
+                    worksheet.Cell(1, 1).Value = "Câu hỏi";
+                    worksheet.Cell(1, 2).Value = "Đáp án A";
+                    worksheet.Cell(1, 3).Value = "Đáp án B";
+                    worksheet.Cell(1, 4).Value = "Đáp án C";
+                    worksheet.Cell(1, 5).Value = "Đáp án D";
+                    worksheet.Cell(1, 6).Value = "Đáp án đúng";
+                    
+                    var headerRange = worksheet.Range("A1:F1");
+                    headerRange.Style.Font.Bold = true;
+                    headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+                    
+                    // Sample data
+                    worksheet.Cell(2, 1).Value = "Thủ đô của Việt Nam là gì?";
+                    worksheet.Cell(2, 2).Value = "Hà Nội";
+                    worksheet.Cell(2, 3).Value = "Hồ Chí Minh";
+                    worksheet.Cell(2, 4).Value = "Đà Nẵng";
+                    worksheet.Cell(2, 5).Value = "Hải Phòng";
+                    worksheet.Cell(2, 6).Value = "A";
+                    
+                    worksheet.Columns().AdjustToContents();
+                    
+                    workbook.SaveAs(dlg.FileName);
+                    MessageBox.Show("Đã tải file mẫu thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+        }
 
-                    // Parse the TXT file. Simple format: 6 lines per question.
-                    // 1: Content
-                    // 2: Opt A
-                    // 3: Opt B
-                    // 4: Opt C
-                    // 5: Opt D
-                    // 6: Correct Answer Index (0-3)
-                    for (int i = 0; i < lines.Length; i += 6)
+        private void DropZone_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                DropZone.Background = new SolidColorBrush(Color.FromRgb(241, 245, 249)); // #F1F5F9
+            }
+        }
+
+        private void DropZone_DragLeave(object sender, DragEventArgs e)
+        {
+            DropZone.Background = Brushes.White;
+        }
+
+        private async void DropZone_Drop(object sender, DragEventArgs e)
+        {
+            DropZone.Background = Brushes.White;
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files.Length > 0)
+                {
+                    await ProcessExcelFileAsync(files[0]);
+                }
+            }
+        }
+
+        private async void DropZone_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Excel files (*.xlsx)|*.xlsx|All files (*.*)|*.*",
+                Title = "Chọn file câu hỏi (Excel)"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                await ProcessExcelFileAsync(dlg.FileName);
+            }
+        }
+
+        private void BtnImportExcel_Click(object sender, RoutedEventArgs e) { }
+
+        private async Task ProcessExcelFileAsync(string filePath)
+        {
+            if (!filePath.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show("Vui lòng chọn file Excel (.xlsx) hợp lệ.", "Lỗi định dạng", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            ProgressPanel.Visibility = Visibility.Visible;
+            ImportProgress.Value = 0;
+            TxtImportStatus.Text = "Đang mở file Excel...";
+            
+            var newItems = new List<ImportQuestionItem>();
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    using (var workbook = new XLWorkbook(filePath))
                     {
-                        // Skip empty lines between questions
-                        while (i < lines.Length && string.IsNullOrWhiteSpace(lines[i]))
+                        var worksheet = workbook.Worksheet(1);
+                        var rangeUsed = worksheet.RangeUsed();
+                        if (rangeUsed == null) return;
+                        var rows = rangeUsed.RowsUsed();
+                        
+                        int totalRows = 0;
+                        foreach (var row in rows) totalRows++;
+                        
+                        int currentRow = 0;
+                        foreach (var row in rows)
                         {
-                            i++;
-                        }
+                            currentRow++;
+                            // Bỏ qua header
+                            if (currentRow == 1) continue;
 
-                        if (i + 5 < lines.Length)
-                        {
-                            string content = lines[i];
-                            string optA = lines[i + 1];
-                            string optB = lines[i + 2];
-                            string optC = lines[i + 3];
-                            string optD = lines[i + 4];
-                            
-                            int correctIdx = 0;
-                            int.TryParse(lines[i + 5].Trim(), out correctIdx);
-
-                            var q = new ExamQuestion
+                            var item = new ImportQuestionItem
                             {
-                                Id = Guid.NewGuid().ToString("N"),
-                                QuestionOrder = _questions.Count + 1,
-                                Type = QuestionType.MultipleChoice,
-                                Content = content,
-                                Options = new List<string> { optA, optB, optC, optD },
-                                CorrectAnswerIndex = correctIdx,
-                                Points = 1
+                                Content = row.Cell(1).GetString(),
+                                OptA = row.Cell(2).GetString(),
+                                OptB = row.Cell(3).GetString(),
+                                OptC = row.Cell(4).GetString(),
+                                OptD = row.Cell(5).GetString(),
+                                CorrectAns = row.Cell(6).GetString()
                             };
+                            item.Validate();
+                            newItems.Add(item);
 
-                            _questions.Add(q);
-                            addedCount++;
+                            // Cập nhật progress bar
+                            Dispatcher.Invoke(() =>
+                            {
+                                ImportProgress.Value = (double)currentRow / totalRows * 100;
+                                TxtImportStatus.Text = $"Đang đọc dữ liệu: {currentRow}/{totalRows} dòng...";
+                            });
                         }
                     }
+                });
 
-                    RefreshQuestionsList();
-                    MessageBox.Show($"Đã import thành công {addedCount} câu hỏi!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
+                int added = 0;
+                int failed = 0;
+                foreach (var item in newItems)
                 {
-                    MessageBox.Show("Lỗi đọc file: " + ex.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    if (item.IsValid)
+                    {
+                        int correctIdx = item.CorrectAns.Trim().ToUpper() switch {
+                            "A" => 0, "B" => 1, "C" => 2, "D" => 3, _ => 0
+                        };
+                        var newQuestion = new ExamQuestion
+                        {
+                            Id = Guid.NewGuid().ToString("N"),
+                            QuestionOrder = _questions.Count + 1,
+                            Type = QuestionType.MultipleChoice,
+                            Content = item.Content,
+                            Options = new List<string> { item.OptA, item.OptB, item.OptC, item.OptD },
+                            CorrectAnswerIndex = correctIdx,
+                            Points = 1.0
+                        };
+                        _questions.Add(newQuestion);
+                        added++;
+                    }
+                    else
+                    {
+                        failed++;
+                    }
                 }
+
+                RefreshQuestionsList();
+                ProgressPanel.Visibility = Visibility.Collapsed;
+                
+                string msg = $"Đã import thành công {added} câu hỏi lên danh sách.";
+                if (failed > 0) msg += $"\nĐã tự động bỏ qua {failed} câu bị lỗi/thiếu dữ liệu trong file.";
+                MessageBox.Show(msg, "Đọc file hoàn tất", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi đọc file: " + ex.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                ProgressPanel.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -194,17 +353,16 @@ namespace e_learning_app
             {
                 var card = new Border
                 {
-                    Background = new SolidColorBrush(Color.FromRgb(248, 250, 252)), // #F8FAFC
+                    Background = new SolidColorBrush(Color.FromRgb(248, 250, 252)),
                     CornerRadius = new CornerRadius(12),
                     Padding = new Thickness(16),
                     Margin = new Thickness(0, 0, 0, 12),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)), // #E2E8F0
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
                     BorderThickness = new Thickness(1)
                 };
 
                 var sp = new StackPanel();
                 
-                // Header: Question number + points + Delete Button
                 var headerGrid = new Grid { Margin = new Thickness(0,0,0,8) };
                 headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -233,7 +391,6 @@ namespace e_learning_app
 
                 sp.Children.Add(headerGrid);
 
-                // Content
                 var txtContent = new TextBlock 
                 { 
                     Text = q.Content, 
@@ -243,7 +400,6 @@ namespace e_learning_app
                 };
                 sp.Children.Add(txtContent);
 
-                // Options
                 char[] optionLetters = { 'A', 'B', 'C', 'D' };
                 for (int i = 0; i < q.Options.Count; i++)
                 {
@@ -251,7 +407,7 @@ namespace e_learning_app
                     var optText = new TextBlock
                     {
                         Text = $"{optionLetters[i]}. {q.Options[i]}",
-                        Foreground = isCorrect ? new SolidColorBrush(Color.FromRgb(16, 185, 129)) : new SolidColorBrush(Color.FromRgb(100, 116, 139)), // Green if correct, gray otherwise
+                        Foreground = isCorrect ? new SolidColorBrush(Color.FromRgb(16, 185, 129)) : new SolidColorBrush(Color.FromRgb(100, 116, 139)),
                         FontWeight = isCorrect ? FontWeights.Bold : FontWeights.Normal,
                         Margin = new Thickness(8, 0, 0, 4),
                         TextWrapping = TextWrapping.Wrap
@@ -272,7 +428,6 @@ namespace e_learning_app
                 if (q != null)
                 {
                     _questions.Remove(q);
-                    // Reorder
                     for (int i = 0; i < _questions.Count; i++)
                     {
                         _questions[i].QuestionOrder = i + 1;
