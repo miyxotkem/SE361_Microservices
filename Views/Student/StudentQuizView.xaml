@@ -1,0 +1,193 @@
+﻿<UserControl x:Class="e_learning_app.Views.StudentQuizView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F0F2F5"
+             Loaded="UserControl_Loaded">
+    
+    <UserControl.Resources>
+        <Style x:Key="ExamCardStyle" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,20,20"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="CardBorder" Width="300" Background="White" CornerRadius="16" Padding="20"
+                                BorderBrush="#F1F5F9" BorderThickness="1">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.05" Color="Black"/>
+                            </Border.Effect>
+                            <Grid>
+                                <ContentPresenter />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="#3B82F6"/>
+                                <Setter TargetName="CardBorder" Property="Background" Value="#F8FAFC"/>
+                                <Setter TargetName="CardBorder" Property="Cursor" Value="Hand"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Filter Chip Style -->
+        <Style x:Key="FilterChip" TargetType="ToggleButton">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#64748B"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#3B82F6"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3B82F6"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="📝 Các bài kiểm tra" FontSize="28" FontWeight="Bold" Foreground="#1E293B"/>
+            <TextBlock Text="Danh sách các bài thi và trắc nghiệm dang mở" FontSize="14" Foreground="#64748B" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <!-- Filter Bar -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Search Box -->
+            <Border Grid.Column="0" Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Padding="14,0">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.04" Color="Black"/>
+                </Border.Effect>
+                <Grid Height="44">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="🔍" VerticalAlignment="Center" Margin="0,0,10,0" Opacity="0.4" FontSize="14"/>
+                    <TextBox x:Name="TxtSearch" Grid.Column="1" Background="Transparent" BorderThickness="0"
+                             VerticalContentAlignment="Center" FontSize="13" Foreground="#1E293B"
+                             TextChanged="TxtSearch_TextChanged"/>
+                    <TextBlock x:Name="SearchPlaceholder" Grid.Column="1" Text="Tìm kiếm theo tên bài kiểm tra..."
+                               VerticalAlignment="Center" Foreground="#94A3B8" FontSize="13" IsHitTestVisible="False"/>
+                    <Button x:Name="BtnClearSearch" Grid.Column="2" Content="✕" Background="Transparent" BorderThickness="0"
+                            Foreground="#94A3B8" FontSize="14" Cursor="Hand" Visibility="Collapsed"
+                            Click="BtnClearSearch_Click"/>
+                </Grid>
+            </Border>
+
+            <!-- Status Filter Chips -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <ToggleButton x:Name="ChipAll" Content="Tất cả" Style="{StaticResource FilterChip}" IsChecked="True"
+                              Margin="0,0,8,0" Click="FilterChip_Click" Tag="all"/>
+                <ToggleButton x:Name="ChipOpen" Content="🟢 Đang mở" Style="{StaticResource FilterChip}"
+                              Margin="0,0,8,0" Click="FilterChip_Click" Tag="open"/>
+                <ToggleButton x:Name="ChipDone" Content="✔ Đã làm" Style="{StaticResource FilterChip}"
+                              Margin="0,0,8,0" Click="FilterChip_Click" Tag="done"/>
+                <ToggleButton x:Name="ChipClosed" Content="🔒 Đã đóng" Style="{StaticResource FilterChip}"
+                              Click="FilterChip_Click" Tag="closed"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Exam List + Empty State -->
+        <Grid Grid.Row="4">
+            <!-- Empty State -->
+            <StackPanel x:Name="PanelEmpty" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="🔍" FontSize="48" HorizontalAlignment="Center" Opacity="0.3"/>
+                <TextBlock x:Name="TxtEmpty" Text="Không tìm thấy bài kiểm tra nào" FontSize="16"
+                           Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                <TextBlock Text="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm" FontSize="13"
+                           Foreground="#CBD5E1" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+            </StackPanel>
+
+            <ListBox x:Name="ExamsList" Background="Transparent" BorderThickness="0"
+                     ItemContainerStyle="{StaticResource ExamCardStyle}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 SelectionChanged="ExamsList_SelectionChanged">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel>
+                        <!-- Status Tag -->
+                        <Border Background="{Binding StatusBg}" CornerRadius="6" Padding="10,4" 
+                                HorizontalAlignment="Left" Margin="0,0,0,12">
+                            <TextBlock Text="{Binding StatusText}" FontSize="11" FontWeight="Bold" Foreground="{Binding StatusColor}"/>
+                        </Border>
+
+                        <!-- Title -->
+                        <TextBlock Text="{Binding Exam.Title}" FontSize="18" FontWeight="Bold" Foreground="#1E293B" 
+                                   TextWrapping="Wrap" Margin="0,0,0,8" Height="50" MaxHeight="50"/>
+
+                        <!-- Description -->
+                        <TextBlock Text="{Binding Exam.Description}" FontSize="13" Foreground="#64748B" 
+                                   TextWrapping="Wrap" Margin="0,0,0,15" Height="40" MaxHeight="40"/>
+
+                        <!-- Meta Info -->
+                        <Border Background="#F8FAFC" CornerRadius="10" Padding="12" Margin="0,0,0,15">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="⏱️" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding Exam.TimeLimitMinutes, StringFormat='{}{0} phút'}" FontSize="12" Foreground="#475569"/>
+                                    <TextBlock Text="  •  " Foreground="#CBD5E1"/>
+                                    <TextBlock Text="🎯" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding Exam.PassingScore, StringFormat='{}Đạt: {0}%'}" FontSize="12" Foreground="#475569"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🏆" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Điểm cao nhất: " FontSize="12" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding MaxScoreDisplay}" FontSize="12" FontWeight="Bold" Foreground="#3B82F6"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Action Hint -->
+                        <TextBlock Text="Nhấn để xem chi tiết →" FontSize="12" Foreground="#3B82F6" 
+                                   FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,332 @@
+<UserControl x:Class="e_learning_app.Views.StudentCourseView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F0F2F5">
+
+    <UserControl.Resources>
+        <Style x:Key="Pill" TargetType="Border">
+            <Setter Property="CornerRadius" Value="20"/>
+            <Setter Property="Padding"      Value="10,4"/>
+        </Style>
+
+        <!-- Playlist Item Button -->
+        <Style x:Key="PlaylistItem" TargetType="Button">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Margin"          Value="0,0,0,4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ItemBd" Background="{TemplateBinding Background}" CornerRadius="12" Padding="12,10">
+                            <ContentPresenter HorizontalAlignment="Stretch"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBd" Property="Background" Value="#F1F5F9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Download Button -->
+        <Style x:Key="DownloadBtn" TargetType="Button">
+            <Setter Property="Background"      Value="#EFF6FF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"         Value="14,8"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#DBEAFE"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- TOP HEADER BAR -->
+        <Border Grid.Row="0" Background="White" Padding="24,14" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Back button -->
+                <Border x:Name="BtnBack" Grid.Column="0" Background="#F1F5F9" CornerRadius="10" Padding="12,8" Cursor="Hand" MouseLeftButtonDown="BtnBack_Click">
+                    <TextBlock Text="← Quay lại" FontSize="13" FontWeight="SemiBold" Foreground="#64748B"/>
+                </Border>
+
+                <!-- Course info -->
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock x:Name="TxtCourseTitle"  FontSize="16" FontWeight="Bold" Foreground="#1E293B"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="TxtCourseSubtitle"  FontSize="12" Foreground="#64748B" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- SPLIT SCREEN CONTENT -->
+        <Grid Grid.Row="1" Margin="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="340"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT: Video Player Area + Materials + Comments -->
+            <Grid Grid.Column="0" Background="#F0F2F5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Video/Content area -->
+                <Border x:Name="VideoContainerBorder" Grid.Row="0" Background="#0F172A" CornerRadius="0" Margin="0">
+                    <Grid x:Name="VideoGrid">
+                        <!-- Video Player -->
+                        <MediaElement x:Name="LessonVideoPlayer" LoadedBehavior="Manual" Stretch="Uniform" Margin="0" />
+
+                        <!-- Video overlay controls -->
+                        <StackPanel x:Name="OverlayPlayPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
+                            <!-- Play button -->
+                            <Border x:Name="BtnOverlayPlay" Width="70" Height="70" CornerRadius="35"
+                                    Background="#3B82F6" HorizontalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="BtnPlayPause_Click">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.4" Color="#3B82F6"/>
+                                </Border.Effect>
+                                <TextBlock Text="▶" FontSize="28" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                            </Border>
+                            <TextBlock x:Name="OverlayLessonTitle" Text="Bài học" FontSize="18" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center" Margin="0,20,0,6"/>
+                        </StackPanel>
+
+                        <!-- Bottom controls bar -->
+                        <Border VerticalAlignment="Bottom" Background="#00000088" Padding="20,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Seek bar -->
+                                <Slider x:Name="ProgressSlider" Grid.Row="0" Minimum="0" Maximum="100" Value="0"
+                                        Cursor="Hand" IsMoveToPointEnabled="True"
+                                        PreviewMouseLeftButtonDown="ProgressSlider_PreviewMouseLeftButtonDown"
+                                        PreviewMouseLeftButtonUp="ProgressSlider_PreviewMouseLeftButtonUp"
+                                        ValueChanged="ProgressSlider_ValueChanged"
+                                        VerticalAlignment="Center"/>
+
+                                <!-- Controls -->
+                                <StackPanel Grid.Row="2" Orientation="Horizontal">
+                                    <TextBlock x:Name="BtnRewind" Text="⏮" FontSize="16" Foreground="White" Margin="0,0,16,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonDown="BtnRewind_Click"/>
+                                    <TextBlock x:Name="BtnPlayPause" Text="▶" FontSize="16" Foreground="White" Margin="0,0,16,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonDown="BtnPlayPause_Click"/>
+                                    <TextBlock x:Name="BtnForward" Text="⏭" FontSize="16" Foreground="White" Margin="0,0,24,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonDown="BtnForward_Click"/>
+                                    <TextBlock x:Name="TxtTime" Text="00:00 / 00:00" FontSize="12" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="BtnMute" Text="🔊" FontSize="16" Foreground="White" Margin="20,0,0,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonDown="BtnMute_Click"/>
+                                    <TextBlock x:Name="BtnFullscreen" Text="⛶" FontSize="16" Foreground="White" HorizontalAlignment="Right"
+                                               Margin="20,0,0,0" Cursor="Hand" VerticalAlignment="Center"
+                                               Panel.ZIndex="1" MouseLeftButtonDown="BtnFullscreen_Click"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- BOTTOM: Tài liệu + Bình luận -->
+                <ScrollViewer Grid.Row="1" MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20,16,20,16">
+
+                        <!-- Bình luận -->
+                        <TextBlock Text="💬  Thảo luận &amp; Hỏi đáp" FontSize="14" FontWeight="Bold"
+                                   Foreground="#1E293B" Margin="0,0,0,10"/>
+
+                        <!-- Comment input -->
+                        <Border Background="White" CornerRadius="14" Padding="12" Margin="0,0,0,10">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="10" ShadowDepth="1" Opacity="0.05" Color="Black"/>
+                            </Border.Effect>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="InputComment" Grid.Column="0" BorderThickness="0" FontSize="13" Foreground="#1E293B"
+                                         Background="Transparent" VerticalAlignment="Center"
+                                         GotFocus="InputComment_GotFocus" LostFocus="InputComment_LostFocus"/>
+                                <TextBlock x:Name="InputCommentPlaceholder" Text="Đặt câu hỏi hoặc để lại nhận xét..." Foreground="#64748B" FontSize="13" VerticalAlignment="Center" IsHitTestVisible="False" Margin="4,0,0,0"/>
+                                <Border x:Name="BtnSendComment" Grid.Column="1" Background="#3B82F6" CornerRadius="10" Padding="10,6" Cursor="Hand" MouseLeftButtonDown="BtnSendComment_Click">
+                                    <TextBlock Text="Gửi" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Comments List -->
+                        <ItemsControl x:Name="CommentsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- Main Comment Item -->
+                                    <StackPanel Margin="0,0,0,12">
+                                        <Border Background="White" CornerRadius="12" Padding="12">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.04" Color="Black"/>
+                                            </Border.Effect>
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                    <Border Width="30" Height="30" CornerRadius="8" Background="{Binding AvatarColor}">
+                                                        <Grid>
+                                                            <TextBlock Text="{Binding UserName[0]}" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Border CornerRadius="8">
+                                                                <Border.Background>
+                                                                    <ImageBrush ImageSource="{Binding ProfileImageUrl, TargetNullValue={x:Null}, FallbackValue={x:Null}}" Stretch="UniformToFill"/>
+                                                                </Border.Background>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                    <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding UserName}" FontWeight="SemiBold" FontSize="12" Foreground="#1E293B"/>
+                                                            <Border CornerRadius="6" Padding="5,2" Margin="6,0,0,0">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Setter Property="Background" Value="#3B82F6"/>
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding UserRole}" Value="Instructor">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                                <TextBlock Text="Giảng viên" FontSize="9" Foreground="White" FontWeight="SemiBold"/>
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding CreatedAt, StringFormat='dd/MM/yyyy HH:mm'}" FontSize="10" Foreground="#94A3B8"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Content}" FontSize="12" Foreground="#475569" TextWrapping="Wrap"/>
+                                                
+                                                <!-- Action Buttons -->
+                                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                    <TextBlock Text="Trả lời" Foreground="#3B82F6" Cursor="Hand" FontSize="11" FontWeight="SemiBold" MouseLeftButtonDown="BtnShowReply_Click" Tag="{Binding Id}"/>
+                                                    <TextBlock Text=" • " Foreground="#94A3B8" FontSize="11" Margin="4,0" Visibility="{Binding DeleteButtonVisibility}"/>
+                                                    <TextBlock Text="Xóa" Foreground="#EF4444" Cursor="Hand" FontSize="11" FontWeight="SemiBold" MouseLeftButtonDown="BtnDeleteComment_Click" Tag="{Binding Id}" Visibility="{Binding DeleteButtonVisibility}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <!-- Reply Input Box (Hidden by default) -->
+                                        <Border Visibility="{Binding ReplyInputVisibility}" Background="White" CornerRadius="12" Padding="8" Margin="30,8,0,0" BorderBrush="#E2E8F0" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Text="{Binding ReplyText, UpdateSourceTrigger=PropertyChanged}" Grid.Column="0" BorderThickness="0" FontSize="12" Foreground="#1E293B" Background="Transparent" VerticalAlignment="Center" Tag="Nhập câu trả lời..."/>
+                                                <Border Grid.Column="1" Background="#10B981" CornerRadius="8" Padding="10,4" Cursor="Hand" MouseLeftButtonDown="BtnSubmitReply_Click" Tag="{Binding Id}">
+                                                    <TextBlock Text="Gửi" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Nested Replies -->
+                                        <ItemsControl ItemsSource="{Binding Replies}" Margin="30,8,0,0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#F8FAFC" CornerRadius="12" Padding="10" Margin="0,0,0,8" BorderBrush="#E2E8F0" BorderThickness="1">
+                                                        <StackPanel>
+                                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                                <Border Width="24" Height="24" CornerRadius="6" Background="{Binding AvatarColor}">
+                                                                    <Grid>
+                                                                        <TextBlock Text="{Binding UserName[0]}" Foreground="White" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        <Border CornerRadius="6">
+                                                                            <Border.Background>
+                                                                                <ImageBrush ImageSource="{Binding ProfileImageUrl, TargetNullValue={x:Null}, FallbackValue={x:Null}}" Stretch="UniformToFill"/>
+                                                                            </Border.Background>
+                                                                        </Border>
+                                                                    </Grid>
+                                                                </Border>
+                                                                <StackPanel Margin="6,0,0,0" VerticalAlignment="Center">
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="{Binding UserName}" FontWeight="SemiBold" FontSize="11" Foreground="#1E293B"/>
+                                                                        <Border CornerRadius="4" Padding="4,2" Margin="6,0,0,0">
+                                                                            <Border.Style>
+                                                                                <Style TargetType="Border">
+                                                                                    <Setter Property="Background" Value="#3B82F6"/>
+                                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding UserRole}" Value="Instructor">
+                                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </Border.Style>
+                                                                            <TextBlock Text="Giảng Viên" FontSize="8" Foreground="White" FontWeight="SemiBold"/>
+                                                                        </Border>
+                                                                    </StackPanel>
+                                                                    <TextBlock Text="{Binding CreatedAt, StringFormat='dd/MM/yyyy HH:mm'}" FontSize="9" Foreground="#94A3B8"/>
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                            <TextBlock Text="{Binding Content}" FontSize="11" Foreground="#475569" TextWrapping="Wrap"/>
+                                                            
+                                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                                <TextBlock Text="Xóa" Foreground="#EF4444" Cursor="Hand" FontSize="10" FontWeight="SemiBold" MouseLeftButtonDown="BtnDeleteComment_Click" Tag="{Binding Id}" Visibility="{Binding DeleteButtonVisibility}"/>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- RIGHT: Playlist -->
+            <Border Grid.Column="1" Background="White" BorderBrush="#E2E8F0" BorderThickness="1,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Playlist Header -->
+                    <Border Grid.Row="0" Padding="18,16" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                        <StackPanel>
+                            <TextBlock Text="📋  Danh sách bài học" FontSize="15" FontWeight="Bold" Foreground="#1E293B"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Playlist Items -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="PlaylistItems" Margin="12,12,12,12"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

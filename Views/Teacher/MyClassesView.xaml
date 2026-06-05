@@ -1,0 +1,195 @@
+﻿<UserControl x:Class="e_learning_app.Views.MyClassesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F0F2F5"
+             Loaded="UserControl_Loaded">
+
+    <UserControl.Resources>
+        <Style x:Key="FilterBtn" TargetType="Button">
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height"          Value="40"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="Foreground"      Value="#64748B"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10" Padding="16,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#F1F5F9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Background"      Value="#3B82F6"/>
+            <Setter Property="BorderBrush"     Value="#3B82F6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height"          Value="40"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10" Padding="16,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="30,30,30,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="🎓  Lớp học của tôi" FontSize="24" FontWeight="Bold" Foreground="#1E293B"/>
+                <TextBlock x:Name="TxtSubtitle" Text="Đang tải..." FontSize="13" Foreground="#64748B" Margin="0,6,0,0"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="BtnShowRegister" Content="🔍 Đăng ký lớp học" Style="{StaticResource PrimaryBtn}" Padding="16,0" Visibility="Collapsed" Click="BtnShowRegister_Click"/>
+                <Button x:Name="BtnCreateClass" Content="+ Tạo lớp mới" Style="{StaticResource PrimaryBtn}" Padding="16,0" Visibility="Collapsed" Click="BtnCreateClass_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="White" CornerRadius="10" BorderBrush="#E2E8F0" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="🔍" Margin="14,0,0,0" VerticalAlignment="Center" FontSize="14"/>
+                    <TextBox x:Name="TxtSearch" Grid.Column="1" Background="Transparent" BorderThickness="0" Height="40"
+                             Padding="10,0" VerticalContentAlignment="Center" FontSize="13" Foreground="#1E293B"
+                             TextChanged="TxtSearch_TextChanged" GotFocus="TxtSearch_GotFocus" LostFocus="TxtSearch_LostFocus"/>
+                    <TextBlock x:Name="TxtSearchPlaceholder" Grid.Column="1" Text="Tìm kiếm lớp học..." Foreground="#94A3B8" FontSize="13" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                    <Button x:Name="BtnClearSearch" Grid.Column="2" Content="✕" Background="Transparent" BorderThickness="0" Foreground="#94A3B8" FontSize="12" Width="36" Height="36" Visibility="Collapsed" Cursor="Hand" Click="BtnClearSearch_Click"/>
+                </Grid>
+            </Border>
+
+            <Button x:Name="BtnFilterAll"    Grid.Column="2" Content="Tất cả" Style="{StaticResource FilterBtn}" Background="#EFF6FF" Foreground="#3B82F6" BorderBrush="#BFDBFE" Click="BtnFilter_Click" Tag="all"/>
+            <Button x:Name="BtnFilterActive" Grid.Column="4" Content="Đang học" Style="{StaticResource FilterBtn}" Click="BtnFilter_Click" Tag="active"/>
+            <Button x:Name="BtnFilterEnded"  Grid.Column="6" Content="Kết thúc" Style="{StaticResource FilterBtn}" Click="BtnFilter_Click" Tag="ended"/>
+        </Grid>
+
+        <ScrollViewer x:Name="MainScrollViewer" Grid.Row="4" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border x:Name="EmptyState" Visibility="Collapsed" Background="White" CornerRadius="18" Padding="40" HorizontalAlignment="Center" Margin="0,40,0,0">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="📭" FontSize="48" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="TxtEmptyMessage" Text="Không tìm thấy lớp học nào." FontSize="16" FontWeight="SemiBold" Foreground="#475569" HorizontalAlignment="Center" Margin="0,12,0,6"/>
+                        <TextBlock Text="Thử thay đổi từ khoá hoặc bộ lọc." FontSize="13" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <WrapPanel x:Name="ClassesPanel" Orientation="Horizontal"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid x:Name="RegisterOverlay" Visibility="Collapsed" Grid.RowSpan="5" Margin="-30,-30,-30,-20">
+            <Border Background="#40000000" MouseLeftButtonDown="CloseRegisterOverlay_Click"/>
+
+            <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="550" 
+                    Background="White" CornerRadius="20,0,0,20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="30" ShadowDepth="-5" Opacity="0.1" Color="Black" />
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="40,40,40,20">
+                        <Grid>
+                            <TextBlock Text="Đăng ký lớp học mới" FontSize="24" FontWeight="Bold" Foreground="#1E293B"/>
+                            <Button Content="✕" HorizontalAlignment="Right" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" FontSize="20" Foreground="#94A3B8" Cursor="Hand" Click="CloseRegisterOverlay_Click"/>
+                        </Grid>
+                        <TextBlock Text="Danh sách các lớp học hiện có trên hệ thống mà bạn chua tham gia." FontSize="14" Foreground="#64748B" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1" Margin="40,0,40,30" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <ItemsControl x:Name="UnregisteredList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="12" Padding="15" Margin="0,0,0,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Grid.Column="0" Width="45" Height="45" Background="#EFF6FF" CornerRadius="8" Margin="0,0,15,0">
+                                                    <TextBlock Text="{Binding Emoji}" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="Bold" Foreground="#1E293B" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding ClassName}" FontSize="13" Foreground="#64748B" Margin="0,2,0,0"/>
+                                                </StackPanel>
+
+                                                <Button Grid.Column="2" Content="Gửi yêu cầu" Style="{StaticResource PrimaryBtn}" Padding="15,0" Height="36" Tag="{Binding Id}" Click="BtnSubmitRegistration_Click"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock x:Name="TxtNoCoursesAvailable" Text="Hiện không có lớp học mới nào để dang ký." Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,20,0,0" Visibility="Collapsed"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

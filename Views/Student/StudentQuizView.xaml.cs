@@ -1,0 +1,211 @@
+using e_learning_app;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Effects;
+using System.Windows.Input;
+using e_learning_app.Class;
+using System.Windows.Controls.Primitives;
+
+namespace e_learning_app.Views
+{
+    public class ExamListItem
+    {
+        public Exam Exam { get; set; }
+        public string StatusText { get; set; }
+        public Brush StatusColor { get; set; }
+        public Brush StatusBg { get; set; }
+        public string MaxScoreDisplay { get; set; }
+    }
+
+    public partial class StudentQuizView : UserControl
+    {
+        private readonly DatabaseManager _dbManager;
+        private List<Exam> _allExams = new();
+        private List<ExamSubmission> _studentSubmissions = new();
+        private System.Windows.Threading.DispatcherTimer _pollingTimer;
+        private List<ExamListItem> _renderedItems = new(); // cache for filtering
+        private string _activeFilter = "all";
+
+        public StudentQuizView(DatabaseManager dbManager)
+        {
+            InitializeComponent();
+            _dbManager = dbManager;
+
+            this.Unloaded += (s, e) =>
+            {
+                _pollingTimer?.Stop();
+            };
+        }
+
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            _pollingTimer = new System.Windows.Threading.DispatcherTimer();
+            _pollingTimer.Interval = TimeSpan.FromSeconds(15);
+            _pollingTimer.Tick += async (s, args) => await FetchDataAsync();
+            _pollingTimer.Start();
+
+            FetchDataAsync();
+        }
+
+        private async Task FetchDataAsync()
+        {
+            try
+            {
+                var examsResponse = await ApiService.GetAsync<List<ExamResponse>>("exams/my-exams");
+                if (examsResponse != null)
+                {
+                    _allExams = examsResponse.Select(r => {
+                        var ex = r.Data;
+                        ex.Id = r.Id;
+                        return ex;
+                    }).ToList();
+                }
+
+                var subsResponse = await ApiService.GetAsync<List<ExamSubmissionResponse>>("exams/my-history");
+                if (subsResponse != null)
+                {
+                    _studentSubmissions = subsResponse.Select(r => r.Data).ToList();
+                }
+
+                RenderExams();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Không thể tải danh sách bài thi.\nLý do: {ex.Message}", "Lỗi tải dữ liệu", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                Console.WriteLine("Lỗi fetch exams: " + ex.Message);
+            }
+        }
+
+        private void RenderExams()
+        {
+            var examList = new List<ExamListItem>();
+            foreach (var exam in _allExams)
+            {
+                var submission = _studentSubmissions.FirstOrDefault(s => s.ExamId == exam.Id);
+                bool isDone = submission != null;
+
+                // Status configuration
+                string statusText = isDone ? "Hoàn thành" : (exam.IsActive ? "Đang mở" : "Đã đóng");
+                string statusColor = isDone ? "#3B82F6" : (exam.IsActive ? "#16A34A" : "#64748B");
+                string statusBg = isDone ? "#EFF6FF" : (exam.IsActive ? "#DCFCE7" : "#F1F5F9");
+
+                // Highest Score (Hệ 10)
+                var examSubmissions = _studentSubmissions.Where(s => s.ExamId == exam.Id).ToList();
+                double? maxScore = examSubmissions.Any() ? examSubmissions.Max(s => s.Percentage) / 10 : null;
+
+                examList.Add(new ExamListItem
+                {
+                    Exam = exam,
+                    StatusText = statusText,
+                    StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString(statusColor)),
+                    StatusBg = new SolidColorBrush((Color)ColorConverter.ConvertFromString(statusBg)),
+                    MaxScoreDisplay = maxScore.HasValue ? $"{maxScore.Value:F1}" : "--"
+                });
+            }
+
+            _renderedItems = examList;
+            ApplyFilter();
+        }
+
+        private void ApplyFilter()
+        {
+            string search = TxtSearch?.Text?.Trim().ToLower() ?? "";
+
+            var filtered = _renderedItems.Where(item =>
+            {
+                Exam exam = item.Exam;
+                string statusText = item.StatusText;
+
+                // Search filter
+                bool matchSearch = string.IsNullOrEmpty(search)
+                    || exam.Title.ToLower().Contains(search)
+                    || (exam.Description ?? "").ToLower().Contains(search)
+                    || (exam.ClassName ?? "").ToLower().Contains(search);
+
+                // Status chip filter
+                bool matchStatus = _activeFilter switch
+                {
+                    "open"   => exam.IsActive && statusText != "Hoàn thành",
+                    "done"   => statusText == "Hoàn thành",
+                    "closed" => !exam.IsActive,
+                    _        => true
+                };
+
+                return matchSearch && matchStatus;
+            }).ToList();
+
+            ExamsList.ItemsSource = filtered;
+
+            bool isEmpty = filtered.Count == 0;
+            PanelEmpty.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+            ExamsList.Visibility  = isEmpty ? Visibility.Collapsed : Visibility.Visible;
+
+            // Update empty state message
+            if (isEmpty)
+            {
+                TxtEmpty.Text = string.IsNullOrEmpty(search)
+                    ? "Không có bài kiểm tra nào trong mục này"
+                    : $"Không tìm thấy kết quả cho \"{TxtSearch.Text.Trim()}\""; 
+            }
+        }
+
+        private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            bool hasText = !string.IsNullOrEmpty(TxtSearch.Text);
+            SearchPlaceholder.Visibility = hasText ? Visibility.Collapsed : Visibility.Visible;
+            BtnClearSearch.Visibility    = hasText ? Visibility.Visible   : Visibility.Collapsed;
+            ApplyFilter();
+        }
+
+        private void BtnClearSearch_Click(object sender, RoutedEventArgs e)
+        {
+            TxtSearch.Clear();
+            TxtSearch.Focus();
+        }
+
+        private void FilterChip_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not ToggleButton clicked) return;
+
+            // Uncheck all chips, then check only the clicked one
+            ChipAll.IsChecked    = false;
+            ChipOpen.IsChecked   = false;
+            ChipDone.IsChecked   = false;
+            ChipClosed.IsChecked = false;
+            clicked.IsChecked    = true;
+
+            _activeFilter = clicked.Tag?.ToString() ?? "all";
+            ApplyFilter();
+        }
+
+        private void ExamsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ExamsList.SelectedItem is ExamListItem selectedItem)
+            {
+                NavigateToHistory(selectedItem.Exam);
+                ExamsList.SelectedItem = null;
+            }
+        }
+
+        private void NavigateToHistory(Exam exam)
+        {
+            if (Window.GetWindow(this) is MainWindow mw)
+                mw.MainContentArea.Content = new QuizHistoryView(_dbManager, exam);
+            else if (Window.GetWindow(this) is StudentMainWindow smw)
+                smw.StudentContentArea.Content = new QuizHistoryView(_dbManager, exam);
+        }
+
+        private void BtnTake_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string examId)
+            {
+                var selectedExam = _allExams.FirstOrDefault(x => x.Id == examId);
+            }
+        }
+    }
+}
