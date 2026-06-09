@@ -1,0 +1,84 @@
+version: '3.4'
+
+services:
+  messagebroker:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  yarpapigateway:
+    image: smartedu-gateway
+    build:
+      context: .
+      dockerfile: ApiGateways/YarpApiGateway/Dockerfile
+    ports:
+      - "7000:8080"
+    depends_on:
+      - identity.api
+      - course.api
+      - exam.api
+      - notification.api
+      - comment.api
+
+  identity.api:
+    image: smartedu-identity
+    build:
+      context: .
+      dockerfile: Services/Identity/Identity.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MessageBroker:Host=rabbitmq://messagebroker
+    volumes:
+      - ./WebAPI_E_learning/firebase:/app/firebase
+
+  course.api:
+    image: smartedu-course
+    build:
+      context: .
+      dockerfile: Services/Course/Course.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ./WebAPI_E_learning/firebase:/app/firebase
+
+  exam.api:
+    image: smartedu-exam
+    build:
+      context: .
+      dockerfile: Services/Exam/Exam.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MessageBroker:Host=rabbitmq://messagebroker
+      - GrpcSettings:CourseUrl=http://course.api:8080
+      - GrpcSettings:IdentityUrl=http://identity.api:8080
+    depends_on:
+      - messagebroker
+    volumes:
+      - ./WebAPI_E_learning/firebase:/app/firebase
+
+  notification.api:
+    image: smartedu-notification
+    build:
+      context: .
+      dockerfile: Services/Notification/Notification.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MessageBroker:Host=rabbitmq://messagebroker
+    depends_on:
+      - messagebroker
+    volumes:
+      - ./WebAPI_E_learning/firebase:/app/firebase
+
+  comment.api:
+    image: smartedu-comment
+    build:
+      context: .
+      dockerfile: Services/Comment/Comment.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ./WebAPI_E_learning/firebase:/app/firebase

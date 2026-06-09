@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -19,7 +19,9 @@ namespace e_learning_app
 
     public static class AuthService
     {
-        private const string ApiBaseUrl = "https://api-e-learning.thankfulflower-208a0ec8.eastasia.azurecontainerapps.io/api";
+        // Comment out the Azure URL temporarily for local testing:
+        // private const string ApiBaseUrl = "https://api-e-learning.thankfulflower-208a0ec8.eastasia.azurecontainerapps.io/api";
+        private const string ApiBaseUrl = "http://localhost:7000/api";
         private static readonly HttpClient _httpClient = new HttpClient();
 
         public static async Task<GoogleAuthResponse> AuthenticateWithBackendAsync(string firebaseIdToken)

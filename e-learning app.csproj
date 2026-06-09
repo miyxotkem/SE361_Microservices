@@ -14,6 +14,38 @@
     <EmbeddedResource Remove="WebAPI_E_learning\**" />
     <None Remove="WebAPI_E_learning\**" />
     <Page Remove="WebAPI_E_learning\**" />
+    <Compile Remove="BuildingBlocks\**" />
+    <EmbeddedResource Remove="BuildingBlocks\**" />
+    <None Remove="BuildingBlocks\**" />
+    <Page Remove="BuildingBlocks\**" />
+    <Compile Remove="ApiGateways\**" />
+    <EmbeddedResource Remove="ApiGateways\**" />
+    <None Remove="ApiGateways\**" />
+    <Page Remove="ApiGateways\**" />
+    <Compile Remove="Services\Comment\**" />
+    <EmbeddedResource Remove="Services\Comment\**" />
+    <None Remove="Services\Comment\**" />
+    <Page Remove="Services\Comment\**" />
+    <Compile Remove="Services\Course\**" />
+    <EmbeddedResource Remove="Services\Course\**" />
+    <None Remove="Services\Course\**" />
+    <Page Remove="Services\Course\**" />
+    <Compile Remove="Services\Exam\**" />
+    <EmbeddedResource Remove="Services\Exam\**" />
+    <None Remove="Services\Exam\**" />
+    <Page Remove="Services\Exam\**" />
+    <Compile Remove="Services\Identity\**" />
+    <EmbeddedResource Remove="Services\Identity\**" />
+    <None Remove="Services\Identity\**" />
+    <Page Remove="Services\Identity\**" />
+    <Compile Remove="Services\Notification\**" />
+    <EmbeddedResource Remove="Services\Notification\**" />
+    <None Remove="Services\Notification\**" />
+    <Page Remove="Services\Notification\**" />
+    <Compile Remove="EShopMicroservices\**" />
+    <EmbeddedResource Remove="EShopMicroservices\**" />
+    <None Remove="EShopMicroservices\**" />
+    <Page Remove="EShopMicroservices\**" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option csharp_namespace = "Course.API.Grpc";
+
+package course;
+
+service CourseProtoService {
+    rpc GetCourseDetails (GetCourseDetailsRequest) returns (CourseModel);
+    rpc CheckStudentRegistration (CheckStudentRegistrationRequest) returns (StudentRegistrationModel);
+    rpc GetAcceptedCoursesForStudent (GetAcceptedCoursesRequest) returns (AcceptedCoursesResponse);
+}
+
+message GetCourseDetailsRequest {
+    string courseId = 1;
+}
+
+message CourseModel {
+    string courseId = 1;
+    string title = 2;
+    string className = 3;
+    string instructorId = 4;
+}
+
+message CheckStudentRegistrationRequest {
+    string studentId = 1;
+    string courseId = 2;
+}
+
+message StudentRegistrationModel {
+    bool isAccepted = 1;
+    string courseId = 2;
+    string className = 3;
+}
+
+message GetAcceptedCoursesRequest {
+    string studentId = 1;
+}
+
+message AcceptedCoursesResponse {
+    repeated string courseIds = 1;
+}

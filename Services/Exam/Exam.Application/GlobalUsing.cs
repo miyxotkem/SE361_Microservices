@@ -1,0 +1,13 @@
+global using BuildingBlocks.CQRS;
+global using Exam.Application.Data;
+global using Exam.Application.Dtos;
+global using Exam.Application.Services;
+global using Exam.Domain.Entities;
+global using Exam.Domain.Models;
+global using MediatR;
+global using Microsoft.AspNetCore.Http;
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Threading;
+global using System.Threading.Tasks;

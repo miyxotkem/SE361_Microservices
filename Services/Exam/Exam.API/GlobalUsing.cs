@@ -1,0 +1,9 @@
+global using Carter;
+global using Exam.Application.Dtos;
+global using MediatR;
+global using Microsoft.AspNetCore.Builder;
+global using Microsoft.AspNetCore.Http;
+global using Microsoft.AspNetCore.Routing;
+global using System;
+global using System.Collections.Generic;
+global using System.Security.Claims;
