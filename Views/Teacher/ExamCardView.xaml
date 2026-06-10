@@ -229,14 +229,7 @@
                 
                 <!-- Title & ClassName -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Title, FallbackValue='Quiz Chuong 1: Giới Thiệu Lập Trình'}" 
-                                FontSize="20" 
-                                FontWeight="Bold" 
-                                Foreground="#1E293B" 
-                                TextWrapping="Wrap"
-                                Margin="0,0,0,6"/>
-                    
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                         <TextBlock Text="🏫" Foreground="#94A3B8" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding ClassName, FallbackValue='SE104.O21 - Công nghệ phần mềm'}" 
                                    FontSize="13" 
@@ -245,6 +238,12 @@
                                    VerticalAlignment="Center"
                                    FontWeight="Medium"/>
                     </StackPanel>
+
+                    <TextBlock Text="{Binding Title, FallbackValue='Quiz Chuong 1: Giới Thiệu Lập Trình'}" 
+                                FontSize="20" 
+                                FontWeight="Bold" 
+                                Foreground="#1E293B" 
+                                TextWrapping="Wrap"/>
                 </StackPanel>
                 
                 <!-- Action Buttons -->

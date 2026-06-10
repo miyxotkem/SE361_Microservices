@@ -48,7 +48,7 @@ namespace Exam.Application.Exams.Commands.CreateExam
                 TimeLimitMinutes = req.DurationMinutes,
                 Description = req.Description,
                 PassingScore = req.PassingScore,
-                IsPublished = req.IsPublished,
+                IsPublished = false,
                 IsActive = req.IsActive,
                 AllowReview = req.AllowReview,
                 RandomizeQuestions = req.RandomizeQuestions,

@@ -53,8 +53,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
-      - GrpcSettings:CourseUrl=http://course.api:8080
-      - GrpcSettings:IdentityUrl=http://identity.api:8080
+      - GrpcSettings:CourseUrl=http://course.api:8081
+      - GrpcSettings:IdentityUrl=http://identity.api:8081
     depends_on:
       - messagebroker
     volumes:

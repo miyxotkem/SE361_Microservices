@@ -57,7 +57,16 @@ namespace Exam.Infrastructure.Services
                 {
                     CourseId = courseId
                 });
-                return response.ClassName;
+                
+                if (string.IsNullOrEmpty(response.ClassName))
+                {
+                    return response.Title ?? string.Empty;
+                }
+                if (string.IsNullOrEmpty(response.Title))
+                {
+                    return response.ClassName ?? string.Empty;
+                }
+                return $"{response.ClassName} - {response.Title}";
             }
             catch
             {
