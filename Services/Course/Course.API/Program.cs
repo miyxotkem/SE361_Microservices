@@ -1,3 +1,5 @@
+using BuildingBlocks.Messaging.MassTransit;
+using MassTransit;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
@@ -83,6 +85,16 @@ builder.Services.AddMediatR(config =>
     config.AddOpenBehavior(typeof(LoggingBehavior<,>));
 });
 
+// Add Message Broker (RabbitMQ) for EventBusConsumers
+builder.Services.AddMessageBroker(builder.Configuration, assembly, config =>
+{
+    config.AddSagaStateMachine<Course.API.Features.Registrations.Sagas.EnrollmentStateMachine, Course.API.Features.Registrations.Sagas.EnrollmentState>()
+        .RedisRepository(r =>
+        {
+            r.DatabaseConfiguration(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379");
+        });
+});
+
 // Configure JSON serialization to handle Firestore Timestamp
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -91,6 +103,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 // Global Exception Handler
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -100,5 +113,6 @@ app.UseAuthorization();
 app.MapCarter();
 app.MapGrpcService<CourseGrpcService>();
 app.UseExceptionHandler(options => { });
+app.MapHub<Course.API.Hubs.EnrollmentHub>("/hubs/enrollment");
 
 app.Run();

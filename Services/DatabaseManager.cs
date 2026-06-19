@@ -107,7 +107,7 @@ namespace e_learning_app
                 {
                     Title = course.Title,
                     Description = course.Description,
-                    Price = 0.0,
+                    Price = course.Price,
                     Courseid = course.Id,
                     ClassName = course.ClassName,
 
@@ -144,7 +144,7 @@ namespace e_learning_app
                     Title = course.Title ?? string.Empty,
                     Description = course.Description ?? string.Empty,
                     ThumbnailUrl = string.Empty,
-                    Price = 0.0,
+                    Price = course.Price,
                     Courseid = course.Id ?? string.Empty,
                     ClassName = course.ClassName ?? string.Empty,
                     CourseType = course.CourseType ?? string.Empty,
@@ -179,6 +179,44 @@ namespace e_learning_app
             {
                 Debug.WriteLine($"DeleteCourseAsync Error: {ex.Message}");
                 return false;
+            }
+        }
+
+        // ==========================================
+        // PAYMENT METHODS
+        // ==========================================
+
+        public class PaymentResponseModel
+        {
+            public bool success { get; set; }
+            public string paymentUrl { get; set; }
+            public string message { get; set; }
+        }
+
+        public async Task<string> CreatePaymentAsync(string courseId, string userId, decimal amount, string paymentMethod, string voucherCode, string returnUrl = null)
+        {
+            try
+            {
+                var request = new
+                {
+                    CourseId = courseId,
+                    UserId = userId,
+                    Amount = amount,
+                    PaymentMethod = paymentMethod,
+                    VoucherCode = voucherCode,
+                    ReturnUrl = returnUrl
+                };
+                var response = await ApiService.PostAsync<object, PaymentResponseModel>("payment/create", request);
+                if (response != null && response.success)
+                {
+                    return response.paymentUrl;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CreatePaymentAsync Error: {ex.Message}");
+                return null;
             }
         }
 

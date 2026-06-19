@@ -1,0 +1,180 @@
+﻿<Window x:Class="e_learning_app.Views.Payment.PaymentWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Thanh toán khóa học" Height="600" Width="400" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <!-- Modern Colors -->
+        <SolidColorBrush x:Key="PrimaryColor" Color="#4A90E2"/>
+        <SolidColorBrush x:Key="SecondaryColor" Color="#F5F7FA"/>
+        <SolidColorBrush x:Key="TextColor" Color="#2C3E50"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#E1E8ED"/>
+        <SolidColorBrush x:Key="ErrorColor" Color="#E74C3C"/>
+
+        <!-- Label Style -->
+        <Style TargetType="TextBlock" x:Key="LabelStyle">
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,15,0,5"/>
+        </Style>
+
+        <!-- TextBox Style -->
+        <Style TargetType="TextBox" x:Key="InputStyle">
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ComboBox Style -->
+        <Style TargetType="ComboBox" x:Key="ComboStyle">
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Padding" Value="10,8"/>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Button Style -->
+        <Style TargetType="Button" x:Key="PrimaryButtonStyle">
+            <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="0,12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#357ABD"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#2A5C8E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{StaticResource SecondaryColor}" Padding="30">
+        <StackPanel>
+            <!-- Header -->
+            <TextBlock Text="Thanh toán khóa học" FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+            <TextBlock Text="Vui lòng kiểm tra thông tin trước khi thanh toán" FontSize="14" Foreground="Gray" HorizontalAlignment="Center" Margin="0,0,0,25"/>
+
+            <!-- Info Card -->
+            <Border Background="White" CornerRadius="12" Padding="20" Margin="0,0,0,20">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="2" BlurRadius="10" Opacity="0.05"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                        <TextBlock Text="Tên khóa học" Foreground="Gray" FontSize="12" Margin="0,0,0,2"/>
+                        <TextBlock x:Name="txtCourseName" Text="Lập trình WPF Cơ bản" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextColor}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    
+                    <StackPanel Grid.Row="1">
+                        <TextBlock Text="Số tiền thanh toán" Foreground="Gray" FontSize="12" Margin="0,0,0,2"/>
+                        <TextBlock x:Name="txtAmount" Text="1,000,000 VNĐ" FontSize="22" FontWeight="Bold" Foreground="#27AE60"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Inputs -->
+            <TextBlock Text="Mã giảm giá (nếu có)" Style="{StaticResource LabelStyle}" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtVoucher" Style="{StaticResource InputStyle}" Margin="0,0,0,15" Text="0"/>
+
+            <TextBlock Text="Phương thức thanh toán" Style="{StaticResource LabelStyle}" Margin="0,0,0,10"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,25">
+                <StackPanel.Resources>
+                    <Style TargetType="RadioButton" x:Key="PaymentCardStyle">
+                        <Setter Property="Margin" Value="5"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="RadioButton">
+                                    <Border x:Name="border" BorderBrush="{StaticResource BorderColor}" BorderThickness="2" CornerRadius="8" Background="White" Padding="10">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                            <Setter TargetName="border" Property="Background" Value="#F0F8FF"/>
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </StackPanel.Resources>
+
+                <!-- VNPay -->
+                <RadioButton x:Name="rbVNPay" Style="{StaticResource PaymentCardStyle}" IsChecked="True" Tag="VNPay">
+                    <StackPanel>
+                        <Image Source="https://vnpay.vn/s1/statics.vnpay.vn/2023/6/0oxhzjmxbksr1686814746087.png" Width="60" Height="40" Stretch="Uniform"/>
+                        <TextBlock Text="VNPay" HorizontalAlignment="Center" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextColor}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <!-- MoMo -->
+                <RadioButton x:Name="rbMoMo" Style="{StaticResource PaymentCardStyle}" Tag="MoMo">
+                    <StackPanel>
+                        <Image Source="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Square.png" Width="60" Height="40" Stretch="Uniform"/>
+                        <TextBlock Text="MoMo" HorizontalAlignment="Center" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextColor}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <!-- PayPal -->
+                <RadioButton x:Name="rbPayPal" Style="{StaticResource PaymentCardStyle}" Tag="PayPal">
+                    <StackPanel>
+                        <Image Source="https://upload.wikimedia.org/wikipedia/commons/a/a4/Paypal_2014_logo.png" Width="60" Height="40" Stretch="Uniform"/>
+                        <TextBlock Text="PayPal" HorizontalAlignment="Center" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextColor}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </RadioButton>
+            </StackPanel>
+
+            <!-- Submit Button -->
+            <Button x:Name="btnSubmit" Content="Xác nhận thanh toán" Style="{StaticResource PrimaryButtonStyle}" Click="BtnPay_Click"/>
+            
+            <TextBlock x:Name="txtMessage" Foreground="{StaticResource ErrorColor}" FontSize="13" FontWeight="Medium" Margin="0,15,0,0" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
+        </StackPanel>
+    </Border>
+</Window>

@@ -42,6 +42,10 @@
     <EmbeddedResource Remove="Services\Notification\**" />
     <None Remove="Services\Notification\**" />
     <Page Remove="Services\Notification\**" />
+    <Compile Remove="Services\Payment\**" />
+    <EmbeddedResource Remove="Services\Payment\**" />
+    <None Remove="Services\Payment\**" />
+    <Page Remove="Services\Payment\**" />
     <Compile Remove="EShopMicroservices\**" />
     <EmbeddedResource Remove="EShopMicroservices\**" />
     <None Remove="EShopMicroservices\**" />
@@ -52,6 +56,7 @@
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="CloudinaryDotNet" Version="1.29.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.9" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.8" />
   </ItemGroup>
 

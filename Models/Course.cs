@@ -1,4 +1,4 @@
-﻿using Google.Cloud.Firestore;
+using Google.Cloud.Firestore;
 using System;
 
 namespace e_learning_app
@@ -56,5 +56,8 @@ namespace e_learning_app
 
         [FirestoreProperty]
         public int EndPeriod { get; set; }
+
+        [FirestoreProperty]
+        public decimal Price { get; set; } = 0;
     }
 }

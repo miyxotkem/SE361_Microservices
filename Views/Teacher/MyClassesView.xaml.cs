@@ -1,5 +1,6 @@
 using e_learning_app;
 using Google.Cloud.Firestore;
+using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace e_learning_app.Views
         private readonly string _currentUserId;
         private List<Course> _allClasses = new();
         private Dictionary<string, string> _myRegistrations = new(); // Dùng để luu trạng thái [CourseId] -> [Status]
+        private HubConnection _hubConnection;
 
 
 
@@ -38,7 +40,12 @@ namespace e_learning_app.Views
             _dbManager = dbManager;
             _currentUserId = currentUserId;
             InitializeComponent();
-            this.Unloaded += (s, e) => {   };
+            this.Unloaded += async (s, e) => {
+                if (_hubConnection != null)
+                {
+                    await _hubConnection.DisposeAsync();
+                }
+            };
         }
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -52,6 +59,69 @@ namespace e_learning_app.Views
 
             ApplyRolePermissions();
             LoadDataAsync();
+
+            if (!_isInstructor)
+            {
+                await InitializeSignalRAsync();
+            }
+        }
+
+        private async Task InitializeSignalRAsync()
+        {
+            try
+            {
+                var currentUser = _dbManager.GetCurrentUser();
+                if (currentUser == null) return;
+
+                _hubConnection = new HubConnectionBuilder()
+                    .WithUrl($"http://localhost:7000/course-api/hubs/enrollment?userId={currentUser.Id}")
+                    .WithAutomaticReconnect()
+                    .Build();
+
+                _hubConnection.On<System.Text.Json.JsonElement>("EnrollmentSuccess", (data) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        // Server có thể gửi CourseId hoặc courseId tuỳ JSON option
+                        string courseId = "";
+                        if (data.TryGetProperty("CourseId", out var prop) || data.TryGetProperty("courseId", out prop))
+                            courseId = prop.GetString() ?? "";
+
+                        if (!string.IsNullOrEmpty(courseId))
+                        {
+                            _myRegistrations[courseId] = "active";
+                            ApplyFilter();
+                            CustomDialog.Show("Thanh toán thành công! Bạn đã được duyệt vào lớp.", "Thông báo", DialogType.Success);
+                        }
+                    });
+                });
+
+                _hubConnection.On<System.Text.Json.JsonElement>("EnrollmentFailed", (data) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        string courseId = "";
+                        if (data.TryGetProperty("CourseId", out var prop) || data.TryGetProperty("courseId", out prop))
+                            courseId = prop.GetString() ?? "";
+
+                        string reason = "";
+                        if (data.TryGetProperty("Reason", out var reasonProp) || data.TryGetProperty("reason", out reasonProp))
+                            reason = reasonProp.GetString() ?? "";
+
+                        if (!string.IsNullOrEmpty(courseId))
+                            _myRegistrations.Remove(courseId);
+                        ApplyFilter();
+                        CustomDialog.Show($"Đăng ký thất bại: {reason}", "Lỗi", DialogType.Error);
+                    });
+                });
+
+                await _hubConnection.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SignalR Connection Error: {ex}");
+                // Ignore connection errors for now
+            }
         }
 
         private void ApplyRolePermissions()
@@ -86,26 +156,6 @@ namespace e_learning_app.Views
                 {
                     var course = item.Data;
                     course.Id = item.Id;
-                    
-                    try 
-                    {
-                        var regs = await ApiService.GetAsync<List<RegistrationResponse>>($"courses/{course.Id}/students");
-                        int enrolledCount = regs?.Count(r => r.Data.status?.ToLower() == "active" || r.Data.status?.ToLower() == "accepted") ?? 0;
-                        var assigns = await ApiService.GetAsync<List<AssignmentResponse>>($"courses/{course.Id}/assignments");
-                        int assignCount = assigns?.Count ?? 0;
-                        
-                        if (course.StudentCount != enrolledCount || course.AssignmentCount != assignCount)
-                        {
-                            course.StudentCount = enrolledCount;
-                            course.AssignmentCount = assignCount;
-                            if (course.InstructorId == currentUser.Id)
-                            {
-                                await _dbManager.UpdateCourseAsync(course);
-                            }
-                        }
-                    } 
-                    catch { }
-
                     _allClasses.Add(course);
                 }
 
@@ -251,6 +301,11 @@ namespace e_learning_app.Views
             }
         }
 
+        private void BtnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            LoadDataAsync();
+        }
+
         private async void BtnEnterClass_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is string courseId)
@@ -315,35 +370,61 @@ namespace e_learning_app.Views
                 var currentUser = _dbManager.GetCurrentUser();
                 if (currentUser == null) return;
 
+                var course = _allClasses.FirstOrDefault(c => c.Id == courseId);
+                if (course == null) return;
+
                 btn.IsEnabled = false;
                 btn.Content = "Đang gửi...";
 
                 try
                 {
                     await ApiService.PostAsync($"courses/{courseId}/register", new { });
-
-                    var course = _allClasses.FirstOrDefault(c => c.Id == courseId);
-                    if (course != null)
-                    {
-                        await NotificationService.SendNotificationAsync(_dbManager, course.InstructorId, "Yêu cầu tham gia lớp", $"Học sinh {currentUser.FullName} đã yêu cầu tham gia lớp {course.ClassName}.", "System", currentUser.Id, currentUser.FullName, courseId: course.Id);
-                    }
-
-                    CustomDialog.Show("Đã gửi yêu cầu dang ký thành công! Vui lòng chờ giảng viên duyệt.", "Thành công", DialogType.Success);
-
-                    // 1. Cập nhật lại danh sách cache cục bộ
                     _myRegistrations[courseId] = "pending";
 
-                    // 2. Làm mới danh sách trong Popup chua dang ký
-                    PopulateUnregisteredList();
+                    // Gửi thông báo có sinh viên yêu cầu tham gia lớp học đến Giảng viên
+                    await NotificationService.SendNotificationAsync(
+                        _dbManager,
+                        course.InstructorId,
+                        "Yêu cầu tham gia lớp",
+                        $"Học sinh {currentUser.FullName} đã yêu cầu tham gia lớp '{course.Title}'.",
+                        "System",
+                        currentUser.Id,
+                        currentUser.FullName,
+                        courseId: course.Id
+                    );
 
-                    // 3. Render lại danh sách ở màn hình chính
+                    CustomDialog.Show("Đã gửi yêu cầu tham gia lớp. Vui lòng chờ giáo viên duyệt.", "Thành công", DialogType.Success);
+                    
+                    PopulateUnregisteredList();
                     ApplyFilter();
                 }
                 catch (Exception ex)
                 {
-                    CustomDialog.Show("Lỗi khi dang ký: " + ex.Message, "Lỗi", DialogType.Error);
+                    CustomDialog.Show($"Lỗi đăng ký: {ex.Message}", "Lỗi", DialogType.Error);
                     btn.IsEnabled = true;
-                    btn.Content = "Gửi yêu cầu";
+                    btn.Content = "Đăng ký";
+                }
+            }
+        }
+
+        private async void BtnPayRegistration_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string courseId)
+            {
+                var currentUser = _dbManager.GetCurrentUser();
+                if (currentUser == null) return;
+
+                var course = _allClasses.FirstOrDefault(c => c.Id == courseId);
+                if (course == null) return;
+
+                var paymentWindow = new Payment.PaymentWindow(courseId, course.Title, course.Price, currentUser.Id);
+                bool? result = paymentWindow.ShowDialog();
+
+                if (result == true)
+                {
+                    _myRegistrations[courseId] = "processing";
+                    ApplyFilter();
+                    CustomDialog.Show("Đang chờ xác nhận thanh toán từ hệ thống...", "Thông báo", DialogType.Success);
                 }
             }
         }
@@ -441,9 +522,18 @@ namespace e_learning_app.Views
             // Layout Card luôn là 1 cột cho nút bấm
             var btns = new System.Windows.Controls.Primitives.UniformGrid { Columns = 1 };
 
-            if (_isInstructor || (_myRegistrations.TryGetValue(c.Id, out string statusAcc) && statusAcc == "accepted"))
+            if (_isInstructor || (_myRegistrations.TryGetValue(c.Id, out string statusAct) && statusAct == "active"))
             {
                 btns.Children.Add(CreateBtn("Vào lớp", accent, Brushes.White, c.Id, BtnEnterClass_Click));
+            }
+            else if (_myRegistrations.TryGetValue(c.Id, out string statusAcc) && statusAcc == "accepted")
+            {
+                // Nút thanh toán VNPay
+                var btnPay = CreateBtn($"Thanh toán VNPay ({c.Price:N0}đ)",
+                    new SolidColorBrush(Color.FromRgb(254, 226, 226)),
+                    new SolidColorBrush(Color.FromRgb(220, 38, 38)),
+                    c.Id, BtnPayRegistration_Click);
+                btns.Children.Add(btnPay);
             }
             else if (_myRegistrations.TryGetValue(c.Id, out string statusPen) && statusPen == "pending")
             {
@@ -455,6 +545,15 @@ namespace e_learning_app.Views
 
                 btnCancel.ToolTip = "Nhấn để hủy yêu cầu tham gia lớp này";
                 btns.Children.Add(btnCancel);
+            }
+            else if (_myRegistrations.TryGetValue(c.Id, out string statusPro) && statusPro == "processing")
+            {
+                var btnProcess = CreateBtn("Đang xử lý thanh toán...",
+                    new SolidColorBrush(Color.FromRgb(224, 242, 254)),
+                    new SolidColorBrush(Color.FromRgb(2, 132, 199)),
+                    c.Id, null);
+                btnProcess.IsEnabled = false;
+                btns.Children.Add(btnProcess);
             }
 
             body.Children.Add(btns);

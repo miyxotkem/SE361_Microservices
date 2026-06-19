@@ -10,6 +10,11 @@ services:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
 
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
   yarpapigateway:
     image: smartedu-gateway
     build:
@@ -23,6 +28,7 @@ services:
       - exam.api
       - notification.api
       - comment.api
+      - payment.api
 
   identity.api:
     image: smartedu-identity
@@ -42,6 +48,10 @@ services:
       dockerfile: Services/Course/Course.API/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - MessageBroker:Host=rabbitmq://messagebroker
+      - Redis:ConnectionString=redis:6379
+    depends_on:
+      - messagebroker
     volumes:
       - ./WebAPI_E_learning/firebase:/app/firebase
 
@@ -82,3 +92,14 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
     volumes:
       - ./WebAPI_E_learning/firebase:/app/firebase
+
+  payment.api:
+    image: smartedu-payment
+    build:
+      context: .
+      dockerfile: Services/Payment/Payment.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MessageBroker:Host=rabbitmq://messagebroker
+    depends_on:
+      - messagebroker

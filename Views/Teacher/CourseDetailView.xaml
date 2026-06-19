@@ -751,6 +751,9 @@
                         <TextBlock Text="Khoa" Foreground="#64748B" Margin="0,0,0,5"/>
                         <TextBox x:Name="EditCategoryInput" Style="{StaticResource ModernTextBox}" Height="42" Margin="0,0,0,15"/>
 
+                        <TextBlock Text="Giá khóa học (VNĐ)" Foreground="#64748B" Margin="0,0,0,5"/>
+                        <TextBox x:Name="EditPriceInput" Style="{StaticResource ModernTextBox}" Height="42" Margin="0,0,0,15"/>
+
                         <TextBlock Text="Lịch học" Foreground="#64748B" Margin="0,0,0,5"/>
                         <Grid Margin="0,0,0,15">
                             <Grid.ColumnDefinitions>

@@ -7,7 +7,7 @@ namespace BuildingBlocks.Messaging.MassTransit;
 public static class Extensions
 {
     public static IServiceCollection AddMessageBroker
-        (this IServiceCollection services, IConfiguration configuration, Assembly? assembly = null)
+        (this IServiceCollection services, IConfiguration configuration, Assembly? assembly = null, Action<IBusRegistrationConfigurator>? configure = null)
     {
         services.AddMassTransit(config =>
         {
@@ -15,6 +15,8 @@ public static class Extensions
 
             if (assembly != null)
                 config.AddConsumers(assembly);
+
+            configure?.Invoke(config);
 
             config.UsingRabbitMq((context, configurator) =>
             {

@@ -1,4 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office2016.Excel;
+using DocumentFormat.OpenXml.Office2016.Excel;
 using e_learning_app;
 using e_learning_app.Class;
 using System;
@@ -88,8 +88,15 @@ namespace e_learning_app
                 string.IsNullOrWhiteSpace(TxtCategory.Text) ||
                 string.IsNullOrWhiteSpace(TxtDescription.Text))
             {
-                CustomDialog.Show("Vui lòng diền đầy đủ tất cả các thông tin (Tên môn, Mô tả, Mã lớp, Chuyên ngành) trước khi tạo lớp!",
+                CustomDialog.Show("Vui lòng điền đầy đủ tất cả các thông tin (Tên môn, Mô tả, Mã lớp, Chuyên ngành) trước khi tạo lớp!",
                                 "Thiếu thông tin", DialogType.Warning);
+                return;
+            }
+
+            if (!decimal.TryParse(TxtPrice.Text, out decimal price) || price < 5000 || price > 1000000000)
+            {
+                CustomDialog.Show("Giá khóa học phải là một số và nằm trong khoảng từ 5.000 đến 1.000.000.000 VNĐ!",
+                                "Giá không hợp lệ", DialogType.Warning);
                 return;
             }
 
@@ -137,6 +144,7 @@ namespace e_learning_app
 
         private Course GetCourse(string day, int startP, int endP)
         {
+            decimal.TryParse(TxtPrice.Text, out decimal price);
             return new Course
             {
                 Id = Guid.NewGuid().ToString("N"),
@@ -150,6 +158,7 @@ namespace e_learning_app
                 DayOfWeek = day,
                 StartPeriod = startP,
                 EndPeriod = endP,
+                Price = price,
 
                 Semester = $"{(CbSemester.SelectedItem as ComboBoxItem).Content} - {CbYear.SelectedItem}",
                 Emoji = PreviewEmoji.Text,

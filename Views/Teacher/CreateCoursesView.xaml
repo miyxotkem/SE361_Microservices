@@ -253,8 +253,21 @@
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Text="Biểu tượng (Emoji)" Style="{StaticResource FieldLabelStyle}"/>
-                        <TextBox x:Name="TxtEmoji" Style="{StaticResource ModernTextBox}" Width="60" Height="42" HorizontalAlignment="Left" MaxLength="2" TextChanged="Sync_UI" Text="📚"/>
+                        <Grid Margin="0,0,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Biểu tượng (Emoji)" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBox x:Name="TxtEmoji" Style="{StaticResource ModernTextBox}" Width="60" Height="42" HorizontalAlignment="Left" MaxLength="2" TextChanged="Sync_UI" Text="📚"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Giá khóa học (VNĐ)" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBox x:Name="TxtPrice" Style="{StaticResource ModernTextBox}" Height="42" Text="0"/>
+                            </StackPanel>
+                        </Grid>
 
                         <TextBlock Text="Màu sắc chủ đề" Style="{StaticResource FieldLabelStyle}" Margin="0,10,0,10"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,30">

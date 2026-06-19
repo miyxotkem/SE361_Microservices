@@ -7,6 +7,7 @@ builder.Services.AddReverseProxy()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseWebSockets();
 app.MapReverseProxy();
 
 app.Run();

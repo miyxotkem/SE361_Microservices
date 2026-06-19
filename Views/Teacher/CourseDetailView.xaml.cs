@@ -1713,7 +1713,7 @@ namespace e_learning_app.Views
         {
             EditTitleInput.Text = _course.Title; EditDescInput.Text = _course.Description;
             EditClassInput.Text = _course.ClassName; EditEmojiInput.Text = _course.Emoji;
-            EditCategoryInput.Text = _course.Category;
+            EditCategoryInput.Text = _course.Category; EditPriceInput.Text = _course.Price.ToString("0.##");
             SetComboBoxByContent(EditCbDay, _course.DayOfWeek);
             EditTxtStartPeriod.Text = _course.StartPeriod.ToString();
             EditTxtEndPeriod.Text = _course.EndPeriod.ToString();
@@ -1762,6 +1762,12 @@ namespace e_learning_app.Views
                 }
             }
 
+            if (!decimal.TryParse(EditPriceInput.Text, out decimal price) || price < 5000 || price > 1000000000)
+            {
+                CustomDialog.Show("Giá khóa học phải là một số và nằm trong khoảng từ 5.000 đến 1.000.000.000 VNĐ!", "Giá không hợp lệ", DialogType.Warning);
+                return;
+            }
+
             _course.Title = EditTitleInput.Text; _course.Description = EditDescInput.Text;
             _course.ClassName = EditClassInput.Text; _course.Emoji = EditEmojiInput.Text;
             _course.Category = EditCategoryInput.Text; _course.AccentColor = GetSelectedColor();
@@ -1769,6 +1775,7 @@ namespace e_learning_app.Views
             _course.DayOfWeek = day;
             _course.StartPeriod = startP;
             _course.EndPeriod = endP;
+            _course.Price = price;
             string sem = (EditSemesterInput.SelectedItem as ComboBoxItem)?.Content.ToString();
             string year = EditYearInput.SelectedItem?.ToString();
             _course.Semester = $"{sem} - {year}";
