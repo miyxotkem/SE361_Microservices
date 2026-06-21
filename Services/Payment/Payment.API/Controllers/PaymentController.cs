@@ -62,8 +62,7 @@ namespace Payment.API.Controllers
                 Amount = finalAmount
             });
 
-            // 3. Generate URL
-            var paymentUrl = service.GeneratePaymentUrl(correlationId.ToString(), finalAmount, request.CourseId, request.UserId, request.ReturnUrl);
+            var paymentUrl = await service.GeneratePaymentUrlAsync(correlationId.ToString(), finalAmount, request.CourseId, request.UserId, request.ReturnUrl);
 
             // 4. Lưu mapping txnRef (yyyyMMddHHmmss) -> correlationId vào cache (hết hạn sau 30 phút)
             //    VNPay trả về vnp_TxnRef trong callback, cần tra cứu để lấy correlationId

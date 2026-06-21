@@ -1,11 +1,15 @@
 using BuildingBlocks.Messaging.Commands;
 using BuildingBlocks.Messaging.Events;
+using Course.API.Hubs;
 using MassTransit;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Course.API.Features.Registrations.Sagas;
 
 public class EnrollmentStateMachine : MassTransitStateMachine<EnrollmentState>
 {
+    private readonly IHubContext<EnrollmentHub> _hubContext;
+
     // Define States
     public State PaymentProcessing { get; private set; } = default!;
     public State Enrolling { get; private set; } = default!;
@@ -20,8 +24,9 @@ public class EnrollmentStateMachine : MassTransitStateMachine<EnrollmentState>
     public Event<EnrollmentActivatedEvent> EnrollmentActivated { get; private set; } = default!;
     public Event<EnrollmentFailedEvent> EnrollmentFailed { get; private set; } = default!;
 
-    public EnrollmentStateMachine()
+    public EnrollmentStateMachine(IHubContext<EnrollmentHub> hubContext)
     {
+        _hubContext = hubContext;
         InstanceState(x => x.CurrentState);
 
         // Configure correlation for events
@@ -45,7 +50,7 @@ public class EnrollmentStateMachine : MassTransitStateMachine<EnrollmentState>
 
         During(PaymentProcessing,
             When(PaymentCompleted)
-                .Then(context => 
+                .Then(context =>
                 {
                     context.Saga.TransactionId = context.Message.TransactionId;
                 })
@@ -65,9 +70,34 @@ public class EnrollmentStateMachine : MassTransitStateMachine<EnrollmentState>
 
         During(Enrolling,
             When(EnrollmentActivated)
+                // Send SignalR notification directly from Saga (avoid competing consumer issue)
+                .ThenAsync(async context =>
+                {
+                    var userId = context.Saga.UserId;
+                    var courseId = context.Saga.CourseId;
+                    var connectionId = EnrollmentHub.GetConnectionId(userId);
+                    if (!string.IsNullOrEmpty(connectionId))
+                    {
+                        await _hubContext.Clients.Client(connectionId)
+                            .SendAsync("EnrollmentSuccess", new { CourseId = courseId });
+                    }
+                })
                 .TransitionTo(Completed),
 
             When(EnrollmentFailed)
+                // Send SignalR failure notification directly from Saga
+                .ThenAsync(async context =>
+                {
+                    var userId = context.Saga.UserId;
+                    var courseId = context.Saga.CourseId;
+                    var reason = context.Message.Reason;
+                    var connectionId = EnrollmentHub.GetConnectionId(userId);
+                    if (!string.IsNullOrEmpty(connectionId))
+                    {
+                        await _hubContext.Clients.Client(connectionId)
+                            .SendAsync("EnrollmentFailed", new { CourseId = courseId, Reason = reason });
+                    }
+                })
                 // If enrollment fails, issue a refund command
                 .SendAsync(new Uri("queue:refund-payment"), context => context.Init<RefundPaymentCommand>(new
                 {

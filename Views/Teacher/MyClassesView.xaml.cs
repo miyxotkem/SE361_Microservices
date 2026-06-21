@@ -91,7 +91,9 @@ namespace e_learning_app.Views
                         {
                             _myRegistrations[courseId] = "active";
                             ApplyFilter();
-                            CustomDialog.Show("Thanh toán thành công! Bạn đã được duyệt vào lớp.", "Thông báo", DialogType.Success);
+                            // Bỏ popup ở đây để tránh bị lặp lại quá nhiều lần click
+                            // CustomDialog.Show("Thanh toán thành công! Bạn đã được duyệt vào lớp.", "Thông báo", DialogType.Success);
+                            Application.Current.MainWindow?.Activate();
                         }
                     });
                 });
@@ -424,7 +426,13 @@ namespace e_learning_app.Views
                 {
                     _myRegistrations[courseId] = "processing";
                     ApplyFilter();
-                    CustomDialog.Show("Đang chờ xác nhận thanh toán từ hệ thống...", "Thông báo", DialogType.Success);
+                    
+                    // Activate lại màn hình chính thay vì show popup
+                    Application.Current.MainWindow?.Activate();
+                    
+                    // Fallback: Tự động tải lại dữ liệu sau 2 giây để chắc chắn ăn state mới từ DB
+                    await Task.Delay(2000);
+                    LoadDataAsync();
                 }
             }
         }
@@ -528,8 +536,7 @@ namespace e_learning_app.Views
             }
             else if (_myRegistrations.TryGetValue(c.Id, out string statusAcc) && statusAcc == "accepted")
             {
-                // Nút thanh toán VNPay
-                var btnPay = CreateBtn($"Thanh toán VNPay ({c.Price:N0}đ)",
+                var btnPay = CreateBtn($"Thanh toán ({c.Price:N0}đ)",
                     new SolidColorBrush(Color.FromRgb(254, 226, 226)),
                     new SolidColorBrush(Color.FromRgb(220, 38, 38)),
                     c.Id, BtnPayRegistration_Click);

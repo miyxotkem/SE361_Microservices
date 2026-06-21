@@ -89,9 +89,22 @@ namespace e_learning_app.Views.Payment
                     var req = context.Request;
                     var res = context.Response;
 
-                    // Lấy mã phản hồi VNPay
-                    string responseCode = req.QueryString["vnp_ResponseCode"];
-                    bool isSuccess = responseCode == "00";
+                    // Lấy mã phản hồi tùy theo cổng thanh toán
+                    bool isSuccess = false;
+                    string transactionId = "";
+
+                    if (paymentMethod == "VNPay")
+                    {
+                        string responseCode = req.QueryString["vnp_ResponseCode"];
+                        isSuccess = responseCode == "00";
+                        transactionId = req.QueryString["vnp_TxnRef"] ?? "";
+                    }
+                    else if (paymentMethod == "MoMo")
+                    {
+                        string resultCode = req.QueryString["resultCode"];
+                        isSuccess = resultCode == "0";
+                        transactionId = req.QueryString["orderId"] ?? "";
+                    }
 
                     // Trả về HTML cho trình duyệt
                     string responseString = isSuccess 
@@ -109,8 +122,9 @@ namespace e_learning_app.Views.Payment
                     {
                         try 
                         {
-                            var payload = new { UserId = _userId, CourseId = _courseId, TransactionId = req.QueryString["vnp_TxnRef"] ?? "", Amount = _amount };
-                            await ApiService.PostAsync("payment/webhook/VNPay", payload);
+                            var payload = new { UserId = _userId, CourseId = _courseId, TransactionId = transactionId, Amount = _amount };
+                            string webhookPath = paymentMethod == "VNPay" ? "payment/webhook/VNPay" : "payment/webhook/MoMo";
+                            await ApiService.PostAsync(webhookPath, payload);
                         } 
                         catch (Exception ex) 
                         {
@@ -118,7 +132,12 @@ namespace e_learning_app.Views.Payment
                             Console.WriteLine("Webhook trigger failed: " + ex.Message);
                         }
                         
-                        CustomDialog.Show("Thanh toán thành công! Giao dịch hoàn tất.", "Thông báo", DialogType.Success);
+                        // Bỏ popup thông báo để giảm bớt click, chỉ cần tự động tắt và refresh
+                        // CustomDialog.Show("Thanh toán thành công! Giao dịch hoàn tất.", "Thông báo", DialogType.Success);
+                        
+                        // Mainactive cái màn hình chính lên
+                        Application.Current.MainWindow?.Activate();
+                        
                         this.DialogResult = true;
                         this.Close();
                     }

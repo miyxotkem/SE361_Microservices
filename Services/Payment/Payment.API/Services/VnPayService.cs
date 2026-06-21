@@ -16,7 +16,7 @@ namespace Payment.API.Services
             _configuration = configuration;
         }
 
-        public string GeneratePaymentUrl(string transactionId, decimal amount, string courseId, string userId, string? returnUrl = null)
+        public Task<string> GeneratePaymentUrlAsync(string transactionId, decimal amount, string courseId, string userId, string? returnUrl = null)
         {
             var vnpayConfig    = _configuration.GetSection("VnPay");
             var vnp_TmnCode    = vnpayConfig["TmnCode"]    ?? "";
@@ -76,7 +76,7 @@ namespace Payment.API.Services
             string vnp_SecureHash = HmacSHA512(vnp_HashSecret, signData);
             string paymentUrl = vnp_BaseUrl + "?" + queryBuilder + "vnp_SecureHash=" + vnp_SecureHash;
 
-            return paymentUrl;
+            return Task.FromResult(paymentUrl);
         }
 
         /// <summary>

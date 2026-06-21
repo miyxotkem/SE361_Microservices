@@ -150,11 +150,17 @@ namespace e_learning_app.Views
                             if (currentUser != null && targetCourse.InstructorId != currentUser.Id && currentUser.Role != "Admin")
                             {
                                 var regs = await ApiService.GetAsync<List<RegistrationResponse>>("courses/my-registrations");
-                                bool isAccepted = regs?.Any(r => r.Data.courseId == targetCourse.Id && r.Data.status?.ToLower() == "accepted") ?? false;
+                                var myReg = regs?.FirstOrDefault(r => r.Data.courseId == targetCourse.Id);
                                 
-                                if (!isAccepted)
+                                if (myReg == null || (myReg.Data.status?.ToLower() != "active" && myReg.Data.status?.ToLower() != "accepted"))
                                 {
                                     CustomDialog.Show("Bạn không có quyền truy cập lớp học này (Đã rời lớp hoặc bị từ chối).", "Cảnh báo", DialogType.Warning);
+                                    return;
+                                }
+
+                                if (myReg.Data.status?.ToLower() == "accepted")
+                                {
+                                    CustomDialog.Show("Bạn đã được giáo viên duyệt vào lớp. Vui lòng vào mục 'Lớp học của tôi' để tiến hành thanh toán trước khi vào học nhé!", "Yêu cầu thanh toán", DialogType.Warning);
                                     return;
                                 }
                             }

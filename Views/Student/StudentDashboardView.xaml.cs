@@ -114,7 +114,8 @@ namespace e_learning_app.Views
                     {
                         if (TryGetProp(dataProp, "CourseId", out var courseIdProp) && TryGetProp(dataProp, "Status", out var statusProp))
                         {
-                            if (statusProp.GetString()?.ToLower() == "accepted")
+                            string status = statusProp.GetString()?.ToLower();
+                            if (status == "accepted" || status == "active")
                             {
                                 string courseId = courseIdProp.GetString();
                                 try
@@ -456,7 +457,28 @@ namespace e_learning_app.Views
 
                 if (n.TargetCourse != null && Window.GetWindow(this) is StudentMainWindow mw)
                 {
-                    mw.StudentContentArea.Content = new CourseDetailView(_dbManager, n.TargetCourse);
+                    try
+                    {
+                        var regs = await e_learning_app.Class.ApiService.GetAsync<List<e_learning_app.Class.RegistrationResponse>>("courses/my-registrations");
+                        var myReg = regs?.FirstOrDefault(r => r.Data.courseId == n.TargetCourse.Id);
+                        
+                        if (myReg != null && myReg.Data.status?.ToLower() == "accepted")
+                        {
+                            CustomDialog.Show("Bạn đã được giáo viên duyệt vào lớp. Vui lòng vào mục 'Lớp học của tôi' để tiến hành thanh toán trước khi vào học nhé!", "Yêu cầu thanh toán", DialogType.Warning);
+                            return;
+                        }
+                        else if (myReg == null || myReg.Data.status?.ToLower() != "active")
+                        {
+                            CustomDialog.Show("Bạn không có quyền truy cập lớp học này.", "Cảnh báo", DialogType.Warning);
+                            return;
+                        }
+
+                        mw.StudentContentArea.Content = new CourseDetailView(_dbManager, n.TargetCourse);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Lỗi kiểm tra quyền: " + ex.Message);
+                    }
                 }
             }
         }
