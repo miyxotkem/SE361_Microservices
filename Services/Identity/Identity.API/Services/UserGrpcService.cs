@@ -1,17 +1,20 @@
-using Google.Cloud.Firestore;
 using Grpc.Core;
+using Identity.API.Data;
 using Identity.API.Grpc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading.Tasks;
 
 namespace Identity.API.Services
 {
     public class UserGrpcService : UserProtoService.UserProtoServiceBase
     {
-        private readonly FirestoreDb _firestoreDb;
+        private readonly IdentityDbContext _context;
         private readonly ILogger<UserGrpcService> _logger;
 
-        public UserGrpcService(FirestoreDb firestoreDb, ILogger<UserGrpcService> logger)
+        public UserGrpcService(IdentityDbContext context, ILogger<UserGrpcService> logger)
         {
-            _firestoreDb = firestoreDb;
+            _context = context;
             _logger = logger;
         }
 
@@ -19,26 +22,20 @@ namespace Identity.API.Services
         {
             _logger.LogInformation("gRPC GetUserProfile called for UserId: {UserId}", request.UserId);
 
-            var docRef = _firestoreDb.Collection("Users").Document(request.UserId);
-            var snap = await docRef.GetSnapshotAsync(context.CancellationToken);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, context.CancellationToken);
 
-            if (!snap.Exists)
+            if (user == null)
             {
-                _logger.LogWarning("gRPC GetUserProfile - UserId {UserId} not found in Firestore.", request.UserId);
+                _logger.LogWarning("gRPC GetUserProfile - UserId {UserId} not found in PostgreSQL.", request.UserId);
                 throw new RpcException(new Status(StatusCode.NotFound, $"User with ID {request.UserId} not found."));
             }
 
-            var dict = snap.ToDictionary();
-            string fullName = dict.ContainsKey("FullName") ? dict["FullName"].ToString() ?? "Student" : "Student";
-            string email = dict.ContainsKey("Email") ? dict["Email"].ToString() ?? "" : "";
-            string role = dict.ContainsKey("Role") ? dict["Role"].ToString() ?? "Student" : "Student";
-
             return new UserProfileModel
             {
-                UserId = request.UserId,
-                FullName = fullName,
-                Email = email,
-                Role = role
+                UserId = user.Id,
+                FullName = user.FullName ?? "Student",
+                Email = user.Email ?? "",
+                Role = user.Role ?? "Student"
             };
         }
     }

@@ -1,6 +1,11 @@
 using BuildingBlocks.CQRS;
-using Google.Cloud.Firestore;
+using Identity.API.Data;
+using Identity.API.Models;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Identity.API.Features.Users.GetUserById
 {
@@ -8,18 +13,18 @@ namespace Identity.API.Features.Users.GetUserById
 
     public class GetUserByIdQueryHandler : IQueryHandler<GetUserByIdQuery, IResult>
     {
-        private readonly FirestoreDb _firestoreDb;
+        private readonly IdentityDbContext _context;
 
-        public GetUserByIdQueryHandler(FirestoreDb firestoreDb)
+        public GetUserByIdQueryHandler(IdentityDbContext context)
         {
-            _firestoreDb = firestoreDb;
+            _context = context;
         }
 
         public async Task<IResult> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
         {
-            var doc = await _firestoreDb.Collection("Users").Document(request.Id).GetSnapshotAsync(cancellationToken);
-            if (!doc.Exists) return Results.NotFound(new { Message = "User not found." });
-            return Results.Ok(new { Id = doc.Id, Data = UserHelper.ConvertFirestoreTypes(doc.ToDictionary()) });
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
+            if (user == null) return Results.NotFound(new { Message = "User not found." });
+            return Results.Ok(new { Id = user.Id, Data = user });
         }
     }
 }

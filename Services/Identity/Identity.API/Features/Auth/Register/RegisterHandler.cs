@@ -1,7 +1,11 @@
 using BuildingBlocks.CQRS;
-using FirebaseAdmin.Auth;
-using Google.Cloud.Firestore;
+using Identity.API.Data;
+using Identity.API.Models;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Identity.API.Features.Auth.Register
 {
@@ -9,39 +13,42 @@ namespace Identity.API.Features.Auth.Register
 
     public class RegisterCommandHandler : ICommandHandler<RegisterCommand, IResult>
     {
-        private readonly FirestoreDb _firestoreDb;
+        private readonly IdentityDbContext _context;
 
-        public RegisterCommandHandler(FirestoreDb firestoreDb)
+        public RegisterCommandHandler(IdentityDbContext context)
         {
-            _firestoreDb = firestoreDb;
+            _context = context;
         }
 
         public async Task<IResult> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                var userArgs = new UserRecordArgs()
+                var emailLower = request.Email.Trim().ToLower();
+                var emailExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == emailLower, cancellationToken);
+                if (emailExists)
                 {
-                    Email = request.Email,
-                    Password = request.Password,
-                    DisplayName = request.FullName,
-                };
-                UserRecord userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(userArgs);
+                    return Results.BadRequest(new { Message = "Email này đã được sử dụng bởi tài khoản khác." });
+                }
 
-                var userDoc = _firestoreDb.Collection("Users").Document(userRecord.Uid);
-                var userData = new Dictionary<string, object>
+                string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                string newUid = Guid.NewGuid().ToString();
+
+                var newUser = new User
                 {
-                    { "Email", request.Email },
-                    { "FullName", request.FullName },
-                    { "Role", "Student" },
-                    { "PhoneNumber", "" },
-                    { "CreatedAt", DateTime.UtcNow },
-                    { "IsBlocked", false },
-                    { "ProfileImageUrl", "" }
+                    Id = newUid,
+                    Email = request.Email.Trim(),
+                    PasswordHash = passwordHash,
+                    FullName = request.FullName,
+                    Role = "Student",
+                    CreatedAt = DateTime.UtcNow,
+                    IsBlocked = false
                 };
-                await userDoc.SetAsync(userData, cancellationToken: cancellationToken);
 
-                return Results.Ok(new { Message = "Đăng ký thành công", Uid = userRecord.Uid });
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return Results.Ok(new { Message = "Đăng ký thành công", Uid = newUid });
             }
             catch (Exception ex)
             {

@@ -1,57 +1,17 @@
-using FirebaseAdmin;
-using Google.Apis.Auth.OAuth2;
-using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Carter;
 using BuildingBlocks.Behaviors;
 using BuildingBlocks.Exceptions.Handler;
-using BuildingBlocks.Helpers;
+using Microsoft.EntityFrameworkCore;
+using Identity.API.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Config path for Firebase credential
-var pathJson = Path.Combine(builder.Environment.ContentRootPath, "firebase", "firebase_json.json");
-if (!File.Exists(pathJson))
-{
-    // Fallback if running in container where root path is /app but key file might be mounted elsewhere or in parent WebAPI_E_learning
-    var parentFirebase = Path.Combine(Directory.GetCurrentDirectory(), "firebase", "firebase_json.json");
-    if (File.Exists(parentFirebase))
-    {
-        pathJson = parentFirebase;
-    }
-}
-
-// Initialize Firebase Admin
-if (File.Exists(pathJson))
-{
-    FirebaseApp.Create(new AppOptions
-    {
-        Credential = GoogleCredential.FromFile(pathJson)
-    });
-}
-
-// Add Firestore to DI
-builder.Services.AddSingleton(provider =>
-{
-    GoogleCredential credential;
-    if (File.Exists(pathJson))
-    {
-        credential = GoogleCredential.FromFile(pathJson);
-    }
-    else
-    {
-        credential = GoogleCredential.GetApplicationDefault();
-    }
-
-    var firestoreClient = new Google.Cloud.Firestore.V1.FirestoreClientBuilder
-    {
-        Credential = credential
-    }.Build();
-    
-    return FirestoreDb.Create("e-learning-cd1b3", firestoreClient);
-});
+// Register Supabase PostgreSQL DbContext
+builder.Services.AddDbContext<IdentityDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add JWT Authentication
 var jwtkey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_smartedu_1234567890";
@@ -83,16 +43,17 @@ builder.Services.AddMediatR(config =>
     config.AddOpenBehavior(typeof(LoggingBehavior<,>));
 });
 
-// Configure JSON serialization to handle Firestore Timestamp
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.Converters.Add(new FirestoreTimestampConverter());
-});
-
 // Global Exception Handler
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
 var app = builder.Build();
+
+// Automatically Apply Migrations on Startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+    db.Database.Migrate();
+}
 
 // Setup Pipeline
 app.UseAuthentication();

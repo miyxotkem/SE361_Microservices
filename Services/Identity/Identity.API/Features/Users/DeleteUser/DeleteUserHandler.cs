@@ -1,6 +1,11 @@
 using BuildingBlocks.CQRS;
-using Google.Cloud.Firestore;
+using Identity.API.Data;
+using Identity.API.Models;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Identity.API.Features.Users.DeleteUser
 {
@@ -8,20 +13,21 @@ namespace Identity.API.Features.Users.DeleteUser
 
     public class DeleteUserCommandHandler : ICommandHandler<DeleteUserCommand, IResult>
     {
-        private readonly FirestoreDb _firestoreDb;
+        private readonly IdentityDbContext _context;
 
-        public DeleteUserCommandHandler(FirestoreDb firestoreDb)
+        public DeleteUserCommandHandler(IdentityDbContext context)
         {
-            _firestoreDb = firestoreDb;
+            _context = context;
         }
 
         public async Task<IResult> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
         {
-            var docRef = _firestoreDb.Collection("Users").Document(request.Id);
-            var snap = await docRef.GetSnapshotAsync(cancellationToken);
-            if (!snap.Exists) return Results.NotFound("User not found");
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
+            if (user == null) return Results.NotFound("User not found");
 
-            await docRef.DeleteAsync(cancellationToken: cancellationToken);
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync(cancellationToken);
+
             return Results.Ok(new { Message = "User deleted successfully" });
         }
     }

@@ -1,32 +1,25 @@
 using BuildingBlocks.CQRS;
-using Google.Cloud.Firestore;
+using Identity.API.Data;
+using Identity.API.Models;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
-using System.Text;
-using System.Text.Json;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Identity.API.Features.Auth.LoginEmail
 {
     public record LoginEmailCommand(string Email, string Password) : ICommand<IResult>;
 
-    public class GoogleAuthResult
-    {
-        public string LocalId { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string DisplayName { get; set; } = string.Empty;
-        public string IdToken { get; set; } = string.Empty;
-        public string RefreshToken { get; set; } = string.Empty;
-        public string ExpiresIn { get; set; } = string.Empty;
-    }
-
     public class LoginEmailCommandHandler : ICommandHandler<LoginEmailCommand, IResult>
     {
         private readonly IConfiguration _config;
-        private readonly FirestoreDb _firestoreDb;
+        private readonly IdentityDbContext _context;
 
-        public LoginEmailCommandHandler(IConfiguration config, FirestoreDb firestoreDb)
+        public LoginEmailCommandHandler(IConfiguration config, IdentityDbContext context)
         {
             _config = config;
-            _firestoreDb = firestoreDb;
+            _context = context;
         }
 
         public async Task<IResult> Handle(LoginEmailCommand request, CancellationToken cancellationToken)
@@ -50,89 +43,36 @@ namespace Identity.API.Features.Auth.LoginEmail
                     });
                 }
 
-                using (var httpClient = new HttpClient())
+                var emailLower = request.Email.Trim().ToLower();
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == emailLower, cancellationToken);
+
+                if (user == null || string.IsNullOrEmpty(user.PasswordHash))
                 {
-                    var apiKey = _config["Firebase:ApiKey"];
-                    var url = $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={apiKey}";
-                    var payload = new
-                    {
-                        email = request.Email,
-                        password = request.Password,
-                        returnSecureToken = true
-                    };
-
-                    var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-                    var response = await httpClient.PostAsync(url, content, cancellationToken);
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        var errorResponse = await response.Content.ReadAsStringAsync(cancellationToken);
-                        string errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác.";
-                        try
-                        {
-                            var errDoc = JsonDocument.Parse(errorResponse).RootElement;
-                            if (errDoc.TryGetProperty("error", out var errProp) && errProp.TryGetProperty("message", out var msgProp))
-                            {
-                                string firebaseError = msgProp.GetString() ?? "";
-                                if (firebaseError == "EMAIL_NOT_FOUND" || firebaseError == "INVALID_PASSWORD" || firebaseError == "INVALID_LOGIN_CREDENTIALS")
-                                {
-                                    errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác.";
-                                }
-                                else if (firebaseError == "USER_DISABLED")
-                                {
-                                    errorMessage = "Tài khoản này đã bị vô hiệu hóa.";
-                                }
-                                else
-                                {
-                                    errorMessage = firebaseError;
-                                }
-                            }
-                        }
-                        catch { }
-                        return Results.Json(new { Message = errorMessage }, statusCode: StatusCodes.Status401Unauthorized);
-                    }
-
-                    var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
-                    var googleAuthResult = JsonSerializer.Deserialize<GoogleAuthResult>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                    if (googleAuthResult == null || string.IsNullOrEmpty(googleAuthResult.LocalId))
-                    {
-                        return Results.Json(new { Message = "Không thể xác thực thông tin đăng nhập." }, statusCode: StatusCodes.Status401Unauthorized);
-                    }
-
-                    var uid = googleAuthResult.LocalId;
-                    var userDoc = await _firestoreDb.Collection("Users").Document(uid).GetSnapshotAsync(cancellationToken);
-                    string role = "Student";
-                    bool isBlocked = false;
-                    if (userDoc.Exists)
-                    {
-                        if (userDoc.TryGetValue("Role", out string dbRole))
-                        {
-                            role = dbRole;
-                        }
-                        if (userDoc.TryGetValue("IsBlocked", out bool dbBlocked))
-                        {
-                            isBlocked = dbBlocked;
-                        }
-                    }
-
-                    if (isBlocked)
-                    {
-                        return Results.BadRequest(new { Message = "Tài khoản của bạn đã bị khóa bởi Admin!" });
-                    }
-
-                    var jwtToReturn = AuthHelper.GenerateJwtToken(uid, googleAuthResult.Email, role, _config);
-
-                    return Results.Ok(new
-                    {
-                        Token = jwtToReturn,
-                        Uid = uid,
-                        Email = googleAuthResult.Email,
-                        DisplayName = googleAuthResult.DisplayName,
-                        FirebaseToken = googleAuthResult.IdToken,
-                        ExpiresIn = int.TryParse(googleAuthResult.ExpiresIn, out int exp) ? exp : 3600
-                    });
+                    return Results.Json(new { Message = "Tên đăng nhập hoặc mật khẩu không chính xác." }, statusCode: StatusCodes.Status401Unauthorized);
                 }
+
+                bool isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+                if (!isValidPassword)
+                {
+                    return Results.Json(new { Message = "Tên đăng nhập hoặc mật khẩu không chính xác." }, statusCode: StatusCodes.Status401Unauthorized);
+                }
+
+                if (user.IsBlocked)
+                {
+                    return Results.BadRequest(new { Message = "Tài khoản của bạn đã bị khóa bởi Admin!" });
+                }
+
+                var jwtToReturn = AuthHelper.GenerateJwtToken(user.Id, user.Email, user.Role, _config);
+
+                return Results.Ok(new
+                {
+                    Token = jwtToReturn,
+                    Uid = user.Id,
+                    Email = user.Email,
+                    DisplayName = user.FullName,
+                    FirebaseToken = "supabase-session",
+                    ExpiresIn = 86400
+                });
             }
             catch (Exception ex)
             {

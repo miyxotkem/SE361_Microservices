@@ -1,6 +1,11 @@
 using BuildingBlocks.CQRS;
-using Google.Cloud.Firestore;
+using Identity.API.Data;
+using Identity.API.Models;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Identity.API.Features.Users.ChangeRole
 {
@@ -8,20 +13,21 @@ namespace Identity.API.Features.Users.ChangeRole
 
     public class ChangeRoleCommandHandler : ICommandHandler<ChangeRoleCommand, IResult>
     {
-        private readonly FirestoreDb _firestoreDb;
+        private readonly IdentityDbContext _context;
 
-        public ChangeRoleCommandHandler(FirestoreDb firestoreDb)
+        public ChangeRoleCommandHandler(IdentityDbContext context)
         {
-            _firestoreDb = firestoreDb;
+            _context = context;
         }
 
         public async Task<IResult> Handle(ChangeRoleCommand request, CancellationToken cancellationToken)
         {
-            var docRef = _firestoreDb.Collection("Users").Document(request.Id);
-            var doc = await docRef.GetSnapshotAsync(cancellationToken);
-            if (!doc.Exists) return Results.NotFound(new { Message = "User not found." });
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
+            if (user == null) return Results.NotFound(new { Message = "User not found." });
 
-            await docRef.UpdateAsync("Role", request.Role, cancellationToken: cancellationToken);
+            user.Role = request.Role;
+            await _context.SaveChangesAsync(cancellationToken);
+
             return Results.Ok(new { Message = "Role updated successfully." });
         }
     }

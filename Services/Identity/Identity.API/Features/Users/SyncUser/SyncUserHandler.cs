@@ -1,6 +1,11 @@
 using BuildingBlocks.CQRS;
-using Google.Cloud.Firestore;
+using Identity.API.Data;
+using Identity.API.Models;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Identity.API.Features.Users.SyncUser
 {
@@ -8,36 +13,35 @@ namespace Identity.API.Features.Users.SyncUser
 
     public class SyncUserCommandHandler : ICommandHandler<SyncUserCommand, IResult>
     {
-        private readonly FirestoreDb _firestoreDb;
+        private readonly IdentityDbContext _context;
 
-        public SyncUserCommandHandler(FirestoreDb firestoreDb)
+        public SyncUserCommandHandler(IdentityDbContext context)
         {
-            _firestoreDb = firestoreDb;
+            _context = context;
         }
 
         public async Task<IResult> Handle(SyncUserCommand request, CancellationToken cancellationToken)
         {
-            var docRef = _firestoreDb.Collection("Users").Document(request.Uid);
-            var docSnap = await docRef.GetSnapshotAsync(cancellationToken);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.Uid, cancellationToken);
 
-            if (!docSnap.Exists)
+            if (user == null)
             {
-                var newUser = new Dictionary<string, object>
+                user = new User
                 {
-                    { "Uid", request.Uid },
-                    { "FullName", string.IsNullOrEmpty(request.FullName) ? "User" : request.FullName },
-                    { "Email", request.Email },
-                    { "Role", "Student" },
-                    { "CreatedAt", DateTime.UtcNow },
-                    { "IsBlocked", false },
-                    { "Provider", string.IsNullOrEmpty(request.Provider) ? "email" : request.Provider },
-                    { "ProfileImageUrl", request.PhotoUrl ?? "" }
+                    Id = request.Uid,
+                    Email = request.Email,
+                    FullName = string.IsNullOrEmpty(request.FullName) ? "User" : request.FullName,
+                    Role = "Student",
+                    CreatedAt = DateTime.UtcNow,
+                    IsBlocked = false,
+                    ProfileImageUrl = request.PhotoUrl ?? ""
                 };
-                await docRef.SetAsync(newUser, cancellationToken: cancellationToken);
-                return Results.Ok(new { Message = "User synchronized.", User = newUser });
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync(cancellationToken);
+                return Results.Ok(new { Message = "User synchronized.", User = user });
             }
 
-            return Results.Ok(new { Message = "User already exists.", User = UserHelper.ConvertFirestoreTypes(docSnap.ToDictionary()) });
+            return Results.Ok(new { Message = "User already exists.", User = user });
         }
     }
 }

@@ -39,7 +39,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
     volumes:
-      - ./WebAPI_E_learning/firebase:/app/firebase
+      - ./firebase:/app/firebase
 
   course.api:
     image: smartedu-course
@@ -53,7 +53,7 @@ services:
     depends_on:
       - messagebroker
     volumes:
-      - ./WebAPI_E_learning/firebase:/app/firebase
+      - ./firebase:/app/firebase
 
   exam.api:
     image: smartedu-exam
@@ -68,7 +68,7 @@ services:
     depends_on:
       - messagebroker
     volumes:
-      - ./WebAPI_E_learning/firebase:/app/firebase
+      - ./firebase:/app/firebase
 
   notification.api:
     image: smartedu-notification
@@ -81,7 +81,7 @@ services:
     depends_on:
       - messagebroker
     volumes:
-      - ./WebAPI_E_learning/firebase:/app/firebase
+      - ./firebase:/app/firebase
 
   comment.api:
     image: smartedu-comment
@@ -91,7 +91,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     volumes:
-      - ./WebAPI_E_learning/firebase:/app/firebase
+      - ./firebase:/app/firebase
 
   payment.api:
     image: smartedu-payment

@@ -1,6 +1,12 @@
 using BuildingBlocks.CQRS;
-using Google.Cloud.Firestore;
+using Identity.API.Data;
+using Identity.API.Models;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Identity.API.Features.Users.GetAllUsers
 {
@@ -8,22 +14,22 @@ namespace Identity.API.Features.Users.GetAllUsers
 
     public class GetAllUsersQueryHandler : IQueryHandler<GetAllUsersQuery, IResult>
     {
-        private readonly FirestoreDb _firestoreDb;
+        private readonly IdentityDbContext _context;
 
-        public GetAllUsersQueryHandler(FirestoreDb firestoreDb)
+        public GetAllUsersQueryHandler(IdentityDbContext context)
         {
-            _firestoreDb = firestoreDb;
+            _context = context;
         }
 
         public async Task<IResult> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
             try
             {
-                var snapshot = await _firestoreDb.Collection("Users").GetSnapshotAsync(cancellationToken);
-                var users = snapshot.Documents.Select(d => new
+                var usersList = await _context.Users.ToListAsync(cancellationToken);
+                var users = usersList.Select(u => new
                 {
-                    Id = d.Id,
-                    Data = UserHelper.ConvertFirestoreTypes(d.ToDictionary())
+                    Id = u.Id,
+                    Data = u
                 });
 
                 return Results.Ok(users);

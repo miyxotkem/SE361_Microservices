@@ -1,6 +1,11 @@
 using BuildingBlocks.CQRS;
-using Google.Cloud.Firestore;
+using Identity.API.Data;
+using Identity.API.Models;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Identity.API.Features.Users.DeleteAvatar
 {
@@ -8,17 +13,21 @@ namespace Identity.API.Features.Users.DeleteAvatar
 
     public class DeleteAvatarCommandHandler : ICommandHandler<DeleteAvatarCommand, IResult>
     {
-        private readonly FirestoreDb _firestoreDb;
+        private readonly IdentityDbContext _context;
 
-        public DeleteAvatarCommandHandler(FirestoreDb firestoreDb)
+        public DeleteAvatarCommandHandler(IdentityDbContext context)
         {
-            _firestoreDb = firestoreDb;
+            _context = context;
         }
 
         public async Task<IResult> Handle(DeleteAvatarCommand request, CancellationToken cancellationToken)
         {
-            var docRef = _firestoreDb.Collection("Users").Document(request.Uid);
-            await docRef.UpdateAsync("ProfileImageUrl", "", cancellationToken: cancellationToken);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.Uid, cancellationToken);
+            if (user == null) return Results.NotFound(new { Message = "User not found." });
+
+            user.ProfileImageUrl = "";
+            await _context.SaveChangesAsync(cancellationToken);
+
             return Results.Ok(new { Message = "Avatar deleted successfully." });
         }
     }
