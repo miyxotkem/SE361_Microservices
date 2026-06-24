@@ -67,7 +67,25 @@ namespace Payment.API.Controllers
             // 4. Lưu mapping txnRef (yyyyMMddHHmmss) -> correlationId vào cache (hết hạn sau 30 phút)
             //    VNPay trả về vnp_TxnRef trong callback, cần tra cứu để lấy correlationId
             var txnRef = DateTime.UtcNow.AddHours(7).ToString("yyyyMMddHHmmss");
-            _cache.Set($"txn:{txnRef}", correlationId, TimeSpan.FromMinutes(30));
+            if (request.PaymentMethod == "VNPay")
+            {
+                _cache.Set($"txn:{txnRef}", correlationId, TimeSpan.FromMinutes(30));
+            }
+            else if (request.PaymentMethod == "PayPal" && !string.IsNullOrEmpty(paymentUrl))
+            {
+                try
+                {
+                    var uri = new Uri(paymentUrl);
+                    var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    var token = queryParams["token"];
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        _cache.Set($"txn:{token}", correlationId, TimeSpan.FromMinutes(30));
+                    }
+                }
+                catch { }
+            }
+
             // Cũng lưu theo correlationId để fallback
             _cache.Set($"corr:{correlationId}", txnRef, TimeSpan.FromMinutes(30));
 
@@ -85,6 +103,7 @@ namespace Payment.API.Controllers
             public string UserId { get; set; }
             public string CourseId { get; set; }
             public string TransactionId { get; set; }
+            public string GatewayOrderId { get; set; } // Added for PayPal capture
             public decimal Amount { get; set; }
         }
 
@@ -105,15 +124,32 @@ namespace Payment.API.Controllers
                 // Thử tra cứu mapping txnRef -> correlationId từ cache
                 if (!_cache.TryGetValue($"txn:{payload.TransactionId}", out correlationId))
                 {
-                    // Không tìm được mapping, nhưng vẫn xử lý nếu có đủ UserId/CourseId
-                    // Tạo correlationId mới để tiếp tục flow
-                    correlationId = Guid.NewGuid();
+                    // Thử tra cứu bằng GatewayOrderId (dùng cho PayPal)
+                    if (string.IsNullOrEmpty(payload.GatewayOrderId) || !_cache.TryGetValue($"txn:{payload.GatewayOrderId}", out correlationId))
+                    {
+                        // Không tìm được mapping, nhưng vẫn xử lý nếu có đủ UserId/CourseId
+                        // Tạo correlationId mới để tiếp tục flow
+                        correlationId = Guid.NewGuid();
+                    }
                 }
             }
 
             // In reality, verify the payment signature with VNPay before proceeding.
             // Assuming successful payment for demo purposes:
-            bool isSuccess = true; // In real code: bool isSuccess = ValidateVnPaySignature(Request.Query);
+            bool isSuccess = true; 
+
+            if (method.Equals("PayPal", StringComparison.OrdinalIgnoreCase))
+            {
+                var paypalService = _paymentServices.OfType<PayPalService>().FirstOrDefault();
+                if (paypalService != null && !string.IsNullOrEmpty(payload.GatewayOrderId))
+                {
+                    isSuccess = await paypalService.CaptureOrderAsync(payload.GatewayOrderId);
+                }
+                else
+                {
+                    isSuccess = false;
+                }
+            }
 
             if (isSuccess)
             {
@@ -128,11 +164,57 @@ namespace Payment.API.Controllers
                 await _publishEndpoint.Publish(new PaymentFailedEvent
                 {
                     CorrelationId = correlationId,
-                    Reason = "Payment gateway verification failed."
+                    Reason = "Payment gateway verification or capture failed."
                 });
             }
 
             return Ok(new { Message = "Webhook processed successfully" });
+        }
+
+        [HttpGet("paypal/return")]
+        public async Task<IActionResult> PayPalReturn([FromQuery] string token, [FromQuery] string PayerID, [FromQuery] string transactionId)
+        {
+            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(transactionId))
+            {
+                return BadRequest("Invalid return parameters.");
+            }
+
+            var paypalService = _paymentServices.OfType<PayPalService>().FirstOrDefault();
+            if (paypalService == null)
+            {
+                return StatusCode(500, "PayPal service is not configured.");
+            }
+
+            // Capture the order using the token (which is the orderId in PayPal v2)
+            bool isSuccess = await paypalService.CaptureOrderAsync(token);
+
+            Guid correlationId;
+            if (!Guid.TryParse(transactionId, out correlationId))
+            {
+                correlationId = Guid.NewGuid();
+            }
+
+            if (isSuccess)
+            {
+                await _publishEndpoint.Publish(new PaymentCompletedEvent
+                {
+                    CorrelationId = correlationId,
+                    TransactionId = transactionId
+                });
+                
+                // Trả về HTML đóng trình duyệt hoặc hiển thị thành công
+                return Content("<html><body><h2>Thanh toán PayPal thành công!</h2><p>Vui lòng quay lại ứng dụng E-Learning.</p><script>setTimeout(function(){ window.close(); }, 3000);</script></body></html>", "text/html");
+            }
+            else
+            {
+                await _publishEndpoint.Publish(new PaymentFailedEvent
+                {
+                    CorrelationId = correlationId,
+                    Reason = "PayPal capture failed."
+                });
+                
+                return Content("<html><body><h2>Thanh toán thất bại!</h2><p>Vui lòng quay lại ứng dụng và thử lại.</p></body></html>", "text/html");
+            }
         }
     }
 }
