@@ -92,18 +92,31 @@ namespace e_learning_app.Views.Payment
                     // Lấy mã phản hồi tùy theo cổng thanh toán
                     bool isSuccess = false;
                     string transactionId = "";
+                    string paypalToken = "";
+                    string originalTransactionId = "";
 
                     if (paymentMethod == "VNPay")
                     {
                         string responseCode = req.QueryString["vnp_ResponseCode"];
                         isSuccess = responseCode == "00";
                         transactionId = req.QueryString["vnp_TxnRef"] ?? "";
+                        originalTransactionId = transactionId;
                     }
                     else if (paymentMethod == "MoMo")
                     {
                         string resultCode = req.QueryString["resultCode"];
                         isSuccess = resultCode == "0";
                         transactionId = req.QueryString["orderId"] ?? "";
+                        originalTransactionId = transactionId;
+                    }
+                    else if (paymentMethod == "PayPal")
+                    {
+                        paypalToken = req.QueryString["token"];
+                        string payerId = req.QueryString["PayerID"];
+                        string returnedTxnId = req.QueryString["transactionId"]; // This is what we appended in PayPalService!
+                        isSuccess = !string.IsNullOrEmpty(paypalToken) && !string.IsNullOrEmpty(payerId);
+                        transactionId = paypalToken ?? ""; // For PayPal, we use token as the GatewayOrderId for capture
+                        originalTransactionId = returnedTxnId ?? ""; 
                     }
 
                     // Trả về HTML cho trình duyệt
@@ -122,8 +135,8 @@ namespace e_learning_app.Views.Payment
                     {
                         try 
                         {
-                            var payload = new { UserId = _userId, CourseId = _courseId, TransactionId = transactionId, Amount = _amount };
-                            string webhookPath = paymentMethod == "VNPay" ? "payment/webhook/VNPay" : "payment/webhook/MoMo";
+                            var payload = new { UserId = _userId, CourseId = _courseId, TransactionId = originalTransactionId, GatewayOrderId = transactionId, Amount = _amount };
+                            string webhookPath = $"payment/webhook/{paymentMethod}";
                             await ApiService.PostAsync(webhookPath, payload);
                         } 
                         catch (Exception ex) 

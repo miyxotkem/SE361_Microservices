@@ -8,6 +8,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient();
 
 // Payment Services
 builder.Services.AddScoped<IPaymentGatewayService, VnPayService>();
