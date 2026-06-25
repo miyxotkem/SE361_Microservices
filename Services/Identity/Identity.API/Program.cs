@@ -13,6 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<IdentityDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
+
 // Add JWT Authentication
 var jwtkey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_smartedu_1234567890";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -61,5 +64,6 @@ app.UseAuthorization();
 app.MapCarter();
 app.MapGrpcService<Identity.API.Services.UserGrpcService>();
 app.UseExceptionHandler(options => { });
+app.MapHealthChecks("/health");
 
 app.Run();

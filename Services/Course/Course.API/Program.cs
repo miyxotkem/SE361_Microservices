@@ -55,6 +55,10 @@ builder.Services.AddSingleton(provider =>
     return FirestoreDb.Create("course-db-28f2a", firestoreClient);
 });
 
+builder.Services.AddHealthChecks()
+    .AddRedis(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379", name: "redis")
+    .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore");
+
 // Add JWT Authentication
 var jwtkey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_smartedu_1234567890";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -114,5 +118,6 @@ app.MapCarter();
 app.MapGrpcService<CourseGrpcService>();
 app.UseExceptionHandler(options => { });
 app.MapHub<Course.API.Hubs.EnrollmentHub>("/hubs/enrollment");
+app.MapHealthChecks("/health");
 
 app.Run();

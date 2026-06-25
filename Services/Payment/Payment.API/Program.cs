@@ -25,6 +25,9 @@ builder.Services.AddScoped<IPaymentGatewayService, PayPalService>();
 var assembly = typeof(Program).Assembly;
 builder.Services.AddMessageBroker(builder.Configuration, assembly);
 
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
+
 var app = builder.Build();
 
 // Automatically Apply Migrations on Startup
@@ -43,5 +46,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();

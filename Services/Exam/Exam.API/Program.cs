@@ -59,6 +59,9 @@ builder.Services.AddSingleton(provider =>
     return FirestoreDb.Create("exam-db-8e1b4", firestoreClient);
 });
 
+builder.Services.AddHealthChecks()
+    .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore");
+
 // Add JWT Authentication
 var jwtkey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_smartedu_1234567890";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -123,5 +126,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapCarter();
 app.UseExceptionHandler(options => { });
+app.MapHealthChecks("/health");
 
 app.Run();
