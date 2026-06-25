@@ -101,5 +101,6 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
+      - ConnectionStrings:DefaultConnection=Host=aws-1-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.cgemkhxgwzdwvrwmonvr;Password=mxVeZqKjLS10DOPv;SslMode=Require;TrustServerCertificate=true
     depends_on:
       - messagebroker

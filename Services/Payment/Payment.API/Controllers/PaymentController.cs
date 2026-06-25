@@ -4,6 +4,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Payment.API.Models;
 using Payment.API.Services;
 using BuildingBlocks.Messaging.Events;
+using Microsoft.EntityFrameworkCore;
+using Payment.API.Data;
 
 namespace Payment.API.Controllers
 {
@@ -14,29 +16,35 @@ namespace Payment.API.Controllers
         private readonly IEnumerable<IPaymentGatewayService> _paymentServices;
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly IMemoryCache _cache;
+        private readonly PaymentDbContext _dbContext;
 
-        public PaymentController(IEnumerable<IPaymentGatewayService> paymentServices, IPublishEndpoint publishEndpoint, IMemoryCache cache)
+        public PaymentController(IEnumerable<IPaymentGatewayService> paymentServices, IPublishEndpoint publishEndpoint, IMemoryCache cache, PaymentDbContext dbContext)
         {
             _paymentServices = paymentServices;
             _publishEndpoint = publishEndpoint;
             _cache = cache;
+            _dbContext = dbContext;
         }
 
         [HttpPost("create")]
         public async Task<IActionResult> CreatePayment([FromBody] PaymentRequest request)
         {
-            // 1. Mock Voucher logic
+            // 1. Database Voucher validation
             decimal finalAmount = request.Amount;
             if (!string.IsNullOrEmpty(request.VoucherCode))
             {
-                // In reality, validate voucher from DB
-                if (request.VoucherCode == "DISCOUNT20")
+                var voucher = await _dbContext.Vouchers.FirstOrDefaultAsync(v => v.Code == request.VoucherCode && v.IsActive && v.ExpiryDate > DateTime.UtcNow);
+                if (voucher != null)
                 {
-                    finalAmount = request.Amount * 0.8m; // 20% discount
+                    var discount = request.Amount * (voucher.DiscountPercentage / 100m);
+                    if (voucher.MaxDiscountAmount > 0 && discount > voucher.MaxDiscountAmount)
+                    {
+                        discount = voucher.MaxDiscountAmount;
+                    }
+                    finalAmount = request.Amount - discount;
                 }
             }
 
-            var transactionId = Guid.NewGuid().ToString();
             var correlationId = Guid.NewGuid();
 
             // 2. Select Payment Service
@@ -52,6 +60,21 @@ namespace Payment.API.Controllers
             {
                 return BadRequest(new { Message = "Unsupported payment method" });
             }
+
+            // Save Pending Transaction Record to Database
+            var transaction = new TransactionRecord
+            {
+                TransactionId = correlationId.ToString(),
+                CourseId = request.CourseId,
+                UserId = request.UserId,
+                Amount = finalAmount,
+                PaymentMethod = request.PaymentMethod,
+                CreatedAt = DateTime.UtcNow,
+                Status = "Pending",
+                VoucherCode = request.VoucherCode
+            };
+            _dbContext.TransactionRecords.Add(transaction);
+            await _dbContext.SaveChangesAsync();
 
             // Publish PaymentInitiatedEvent
             await _publishEndpoint.Publish(new PaymentInitiatedEvent
@@ -168,6 +191,14 @@ namespace Payment.API.Controllers
                 });
             }
 
+            // Update Transaction Record in Database
+            var transaction = await _dbContext.TransactionRecords.FirstOrDefaultAsync(t => t.TransactionId == correlationId.ToString());
+            if (transaction != null)
+            {
+                transaction.Status = isSuccess ? "Success" : "Failed";
+                await _dbContext.SaveChangesAsync();
+            }
+
             return Ok(new { Message = "Webhook processed successfully" });
         }
 
@@ -192,6 +223,14 @@ namespace Payment.API.Controllers
             if (!Guid.TryParse(transactionId, out correlationId))
             {
                 correlationId = Guid.NewGuid();
+            }
+
+            // Update Transaction Record in Database
+            var transaction = await _dbContext.TransactionRecords.FirstOrDefaultAsync(t => t.TransactionId == correlationId.ToString());
+            if (transaction != null)
+            {
+                transaction.Status = isSuccess ? "Success" : "Failed";
+                await _dbContext.SaveChangesAsync();
             }
 
             if (isSuccess)
