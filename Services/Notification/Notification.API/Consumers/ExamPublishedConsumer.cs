@@ -9,11 +9,13 @@ namespace Notification.API.Consumers
     {
         private readonly FirestoreDb _firestoreDb;
         private readonly ILogger<ExamPublishedConsumer> _logger;
+        private readonly Course.API.Grpc.CourseProtoService.CourseProtoServiceClient _courseProtoClient;
 
-        public ExamPublishedConsumer(FirestoreDb firestoreDb, ILogger<ExamPublishedConsumer> logger)
+        public ExamPublishedConsumer(FirestoreDb firestoreDb, ILogger<ExamPublishedConsumer> logger, Course.API.Grpc.CourseProtoService.CourseProtoServiceClient courseProtoClient)
         {
             _firestoreDb = firestoreDb;
             _logger = logger;
+            _courseProtoClient = courseProtoClient;
         }
 
         public async Task Consume(ConsumeContext<ExamPublishedEvent> context)
@@ -24,13 +26,11 @@ namespace Notification.API.Consumers
 
             try
             {
-                // Query accepted students in the course
-                var regSnap = await _firestoreDb.Collection("courseRegistrations")
-                    .WhereEqualTo("courseId", @event.CourseId)
-                    .WhereEqualTo("status", "accepted")
-                    .GetSnapshotAsync();
+                // Query accepted students in the course via gRPC
+                var gRpcResponse = await _courseProtoClient.GetCourseStudentsAsync(
+                    new Course.API.Grpc.GetCourseStudentsRequest { CourseId = @event.CourseId });
 
-                if (regSnap.Documents.Count == 0)
+                if (gRpcResponse.StudentIds.Count == 0)
                 {
                     _logger.LogInformation("No accepted students found in Course {CourseId}. Skipping notification creation.", @event.CourseId);
                     return;
@@ -39,9 +39,8 @@ namespace Notification.API.Consumers
                 var batch = _firestoreDb.StartBatch();
                 var notifRef = _firestoreDb.Collection("Notifications");
 
-                foreach (var doc in regSnap.Documents)
+                foreach (var studentId in gRpcResponse.StudentIds)
                 {
-                    string studentId = doc.GetValue<string>("userId");
                     var notifData = new Dictionary<string, object>
                     {
                         { "Title", "Bài kiểm tra mới!" },
@@ -59,7 +58,7 @@ namespace Notification.API.Consumers
 
                 await batch.CommitAsync();
                 _logger.LogInformation("Successfully created notifications for {Count} students in Course {CourseId}.", 
-                    regSnap.Documents.Count, @event.CourseId);
+                    gRpcResponse.StudentIds.Count, @event.CourseId);
             }
             catch (Exception ex)
             {

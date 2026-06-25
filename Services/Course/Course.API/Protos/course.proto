@@ -8,6 +8,7 @@ service CourseProtoService {
     rpc GetCourseDetails (GetCourseDetailsRequest) returns (CourseModel);
     rpc CheckStudentRegistration (CheckStudentRegistrationRequest) returns (StudentRegistrationModel);
     rpc GetAcceptedCoursesForStudent (GetAcceptedCoursesRequest) returns (AcceptedCoursesResponse);
+    rpc GetCourseStudents (GetCourseStudentsRequest) returns (CourseStudentsResponse);
 }
 
 message GetCourseDetailsRequest {
@@ -38,4 +39,12 @@ message GetAcceptedCoursesRequest {
 
 message AcceptedCoursesResponse {
     repeated string courseIds = 1;
+}
+
+message GetCourseStudentsRequest {
+    string courseId = 1;
+}
+
+message CourseStudentsResponse {
+    repeated string studentIds = 1;
 }

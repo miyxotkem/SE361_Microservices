@@ -19,10 +19,12 @@ namespace Notification.API.Features.Notifications.SendToClass
     public class SendToClassCommandHandler : ICommandHandler<SendToClassCommand, IResult>
     {
         private readonly FirestoreDb _firestoreDb;
+        private readonly Course.API.Grpc.CourseProtoService.CourseProtoServiceClient _courseProtoClient;
 
-        public SendToClassCommandHandler(FirestoreDb firestoreDb)
+        public SendToClassCommandHandler(FirestoreDb firestoreDb, Course.API.Grpc.CourseProtoService.CourseProtoServiceClient courseProtoClient)
         {
             _firestoreDb = firestoreDb;
+            _courseProtoClient = courseProtoClient;
         }
 
         public async Task<IResult> Handle(SendToClassCommand request, CancellationToken cancellationToken)
@@ -30,18 +32,16 @@ namespace Notification.API.Features.Notifications.SendToClass
             try
             {
                 var req = request.Request;
-                // Query courseRegistrations collection directly from the shared DB
-                var regSnap = await _firestoreDb.Collection("courseRegistrations")
-                    .WhereEqualTo("courseId", req.CourseId)
-                    .WhereEqualTo("status", "accepted")
-                    .GetSnapshotAsync(cancellationToken);
+                // Query courseRegistrations via gRPC client
+                var gRpcResponse = await _courseProtoClient.GetCourseStudentsAsync(
+                    new Course.API.Grpc.GetCourseStudentsRequest { CourseId = req.CourseId },
+                    cancellationToken: cancellationToken);
 
                 var batch = _firestoreDb.StartBatch();
                 var notifRef = _firestoreDb.Collection("Notifications");
 
-                foreach (var doc in regSnap.Documents)
+                foreach (var studentId in gRpcResponse.StudentIds)
                 {
-                    string studentId = doc.GetValue<string>("userId");
                     var notifData = new Dictionary<string, object>
                     {
                         { "Title", req.Title },

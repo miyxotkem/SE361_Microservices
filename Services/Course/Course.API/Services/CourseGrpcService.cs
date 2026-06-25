@@ -111,5 +111,34 @@ namespace Course.API.Services
             response.CourseIds.AddRange(acceptedCourseIds);
             return response;
         }
+
+        public override async Task<CourseStudentsResponse> GetCourseStudents(GetCourseStudentsRequest request, ServerCallContext context)
+        {
+            _logger.LogInformation("gRPC GetCourseStudents called for CourseId: {CourseId}", request.CourseId);
+
+            var snap = await _firestoreDb.Collection("courseRegistrations")
+                .WhereEqualTo("courseId", request.CourseId)
+                .GetSnapshotAsync(context.CancellationToken);
+
+            var studentIds = new List<string>();
+
+            foreach (var doc in snap.Documents)
+            {
+                var dict = doc.ToDictionary();
+                string status = dict.ContainsKey("status") ? dict["status"].ToString() ?? "" : "";
+                if (status.Equals("accepted", StringComparison.OrdinalIgnoreCase) || status.Equals("active", StringComparison.OrdinalIgnoreCase))
+                {
+                    string userId = dict.ContainsKey("userId") ? dict["userId"].ToString() ?? "" : "";
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        studentIds.Add(userId);
+                    }
+                }
+            }
+
+            var response = new CourseStudentsResponse();
+            response.StudentIds.AddRange(studentIds);
+            return response;
+        }
     }
 }
