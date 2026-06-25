@@ -43,6 +43,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
+      - ConnectionStrings:DefaultConnection=${IDENTITY_DB_CONNECTION}
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
     volumes:
       - ./firebase:/app/firebase
     healthcheck:
@@ -60,6 +64,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
       - Redis:ConnectionString=redis:6379
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
+      - FIREBASE_CREDENTIALS_JSON_COURSE=${FIREBASE_CREDENTIALS_JSON_COURSE}
     depends_on:
       - messagebroker
     volumes:
@@ -80,6 +88,10 @@ services:
       - MessageBroker:Host=rabbitmq://messagebroker
       - GrpcSettings:CourseUrl=http://course.api:8081
       - GrpcSettings:IdentityUrl=http://identity.api:8081
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
+      - FIREBASE_CREDENTIALS_JSON_EXAM=${FIREBASE_CREDENTIALS_JSON_EXAM}
     depends_on:
       - messagebroker
     volumes:
@@ -99,6 +111,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
       - GrpcSettings:CourseUrl=http://course.api:8081
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
+      - FIREBASE_CREDENTIALS_JSON_NOTIFICATION=${FIREBASE_CREDENTIALS_JSON_NOTIFICATION}
     depends_on:
       - messagebroker
     volumes:
@@ -116,6 +132,10 @@ services:
       dockerfile: Services/Comment/Comment.API/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
+      - FIREBASE_CREDENTIALS_JSON_COMMENT=${FIREBASE_CREDENTIALS_JSON_COMMENT}
     volumes:
       - ./firebase:/app/firebase
     healthcheck:
@@ -132,7 +152,13 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
-      - ConnectionStrings:DefaultConnection=Host=aws-1-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.cgemkhxgwzdwvrwmonvr;Password=mxVeZqKjLS10DOPv;SslMode=Require;TrustServerCertificate=true
+      - ConnectionStrings:DefaultConnection=${PAYMENT_DB_CONNECTION}
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
+      - VnPay:HashSecret=${VNPAY_HASH_SECRET}
+      - MoMo:SecretKey=${MOMO_SECRET_KEY}
+      - PayPal:SecretKey=${PAYPAL_SECRET_KEY}
     depends_on:
       - messagebroker
     healthcheck:

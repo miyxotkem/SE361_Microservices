@@ -12,39 +12,44 @@ using Course.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Config path for Firebase credential
-var pathJson = Path.Combine(builder.Environment.ContentRootPath, "firebase", "firebase_course.json");
-if (!File.Exists(pathJson))
+// Load Firebase Credentials (prioritize environment variable)
+GoogleCredential? googleCredential = null;
+var firebaseJsonEnv = builder.Configuration["FIREBASE_CREDENTIALS_JSON_COURSE"];
+
+if (!string.IsNullOrEmpty(firebaseJsonEnv))
 {
-    var parentFirebase = Path.Combine(Directory.GetCurrentDirectory(), "firebase", "firebase_course.json");
-    if (File.Exists(parentFirebase))
+    googleCredential = GoogleCredential.FromJson(firebaseJsonEnv);
+}
+else
+{
+    var pathJson = Path.Combine(builder.Environment.ContentRootPath, "firebase", "firebase_course.json");
+    if (!File.Exists(pathJson))
     {
-        pathJson = parentFirebase;
+        var parentFirebase = Path.Combine(Directory.GetCurrentDirectory(), "firebase", "firebase_course.json");
+        if (File.Exists(parentFirebase))
+        {
+            pathJson = parentFirebase;
+        }
+    }
+    if (File.Exists(pathJson))
+    {
+        googleCredential = GoogleCredential.FromFile(pathJson);
     }
 }
 
 // Initialize Firebase Admin
-if (File.Exists(pathJson))
+if (googleCredential != null)
 {
     FirebaseApp.Create(new AppOptions
     {
-        Credential = GoogleCredential.FromFile(pathJson)
+        Credential = googleCredential
     });
 }
 
 // Add Firestore to DI
 builder.Services.AddSingleton(provider =>
 {
-    GoogleCredential credential;
-    if (File.Exists(pathJson))
-    {
-        credential = GoogleCredential.FromFile(pathJson);
-    }
-    else
-    {
-        credential = GoogleCredential.GetApplicationDefault();
-    }
-
+    var credential = googleCredential ?? GoogleCredential.GetApplicationDefault();
     var firestoreClient = new Google.Cloud.Firestore.V1.FirestoreClientBuilder
     {
         Credential = credential
