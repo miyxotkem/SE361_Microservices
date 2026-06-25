@@ -9,8 +9,13 @@ using BuildingBlocks.Behaviors;
 using BuildingBlocks.Exceptions.Handler;
 using BuildingBlocks.Helpers;
 using Course.API.Services;
+using Quartz;
+using BuildingBlocks.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add OpenTelemetry Tracing
+builder.Services.AddOpenTelemetryTracing(builder.Configuration, "Course.API");
 
 // Load Firebase Credentials (prioritize environment variable)
 GoogleCredential? googleCredential = null;
@@ -60,7 +65,8 @@ builder.Services.AddSingleton(provider =>
 
 builder.Services.AddHealthChecks()
     .AddRedis(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379", name: "redis")
-    .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore");
+    .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore")
+    .AddRabbitMQ(builder.Configuration);
 
 // Add JWT Authentication
 builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -76,15 +82,30 @@ builder.Services.AddMediatR(config =>
     config.AddOpenBehavior(typeof(LoggingBehavior<,>));
 });
 
-// Add Message Broker (RabbitMQ) for EventBusConsumers
-builder.Services.AddMessageBroker(builder.Configuration, assembly, config =>
+// Add Quartz.NET services
+builder.Services.AddQuartz(q =>
 {
-    config.AddSagaStateMachine<Course.API.Features.Registrations.Sagas.EnrollmentStateMachine, Course.API.Features.Registrations.Sagas.EnrollmentState>()
-        .RedisRepository(r =>
-        {
-            r.DatabaseConfiguration(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379");
-        });
+    q.UseMicrosoftDependencyInjectionJobFactory();
 });
+
+// Add Message Broker (RabbitMQ) for EventBusConsumers
+builder.Services.AddMessageBroker(builder.Configuration, assembly, 
+    configure: config =>
+    {
+        config.AddSagaStateMachine<Course.API.Features.Registrations.Sagas.EnrollmentStateMachine, Course.API.Features.Registrations.Sagas.EnrollmentState>()
+            .RedisRepository(r =>
+            {
+                r.DatabaseConfiguration(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379");
+            });
+
+        // Add Quartz Scheduler & Consumers to MassTransit
+        config.AddPublishMessageScheduler();
+        config.AddQuartzConsumers();
+    },
+    configureBus: (context, cfg) =>
+    {
+        cfg.UsePublishMessageScheduler();
+    });
 
 // Configure JSON serialization to handle Firestore Timestamp
 builder.Services.ConfigureHttpJsonOptions(options =>

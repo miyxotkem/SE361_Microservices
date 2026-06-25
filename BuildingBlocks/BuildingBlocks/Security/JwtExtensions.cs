@@ -10,7 +10,7 @@ namespace BuildingBlocks.Security
     {
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
-            var jwtKey = configuration["Jwt:Key"] ?? "super_secret_key_smartedu_1234567890";
+            var jwtKey = configuration["Jwt:Key"] ?? "Edu_Smart_Secret_Key_At_Least_32_Bytes_Long";
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -21,8 +21,8 @@ namespace BuildingBlocks.Security
                         ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-                        ValidIssuer = configuration["Jwt:Issuer"] ?? "SmartEdu",
-                        ValidAudience = configuration["Jwt:Audience"] ?? "SmartEduClient",
+                        ValidIssuer = configuration["Jwt:Issuer"] ?? "EduSmartAPI",
+                        ValidAudience = configuration["Jwt:Audience"] ?? "EduSmartWPF",
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                     };
                 });

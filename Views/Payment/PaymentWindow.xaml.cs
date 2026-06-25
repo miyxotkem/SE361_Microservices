@@ -135,7 +135,16 @@ namespace e_learning_app.Views.Payment
                     {
                         try 
                         {
-                            var payload = new { UserId = _userId, CourseId = _courseId, TransactionId = originalTransactionId, GatewayOrderId = transactionId, Amount = _amount };
+                            var queryParams = new System.Collections.Generic.Dictionary<string, string>();
+                            foreach (string key in req.QueryString.AllKeys)
+                            {
+                                if (key != null)
+                                {
+                                    queryParams[key] = req.QueryString[key];
+                                }
+                            }
+
+                            var payload = new { UserId = _userId, CourseId = _courseId, TransactionId = originalTransactionId, GatewayOrderId = transactionId, Amount = _amount, QueryParams = queryParams };
                             string webhookPath = $"payment/webhook/{paymentMethod}";
                             await ApiService.PostAsync(webhookPath, payload);
                         } 

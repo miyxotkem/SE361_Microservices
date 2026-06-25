@@ -13,6 +13,9 @@ public class EnrollmentState : SagaStateMachineInstance, ISagaVersion
     public string TransactionId { get; set; } = default!;
     public decimal Amount { get; set; }
 
+    // Expiration token for timeout scheduling
+    public Guid? ExpirationTokenId { get; set; }
+
     // Required by MassTransit.Redis
     public int Version { get; set; }
 }

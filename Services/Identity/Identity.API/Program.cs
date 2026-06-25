@@ -4,8 +4,12 @@ using BuildingBlocks.Behaviors;
 using BuildingBlocks.Exceptions.Handler;
 using Microsoft.EntityFrameworkCore;
 using Identity.API.Data;
+using BuildingBlocks.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add OpenTelemetry Tracing
+builder.Services.AddOpenTelemetryTracing(builder.Configuration, "Identity.API");
 
 // Register Supabase PostgreSQL DbContext
 builder.Services.AddDbContext<IdentityDbContext>(options =>

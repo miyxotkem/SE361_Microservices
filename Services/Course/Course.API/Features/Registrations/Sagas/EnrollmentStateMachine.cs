@@ -24,10 +24,20 @@ public class EnrollmentStateMachine : MassTransitStateMachine<EnrollmentState>
     public Event<EnrollmentActivatedEvent> EnrollmentActivated { get; private set; } = default!;
     public Event<EnrollmentFailedEvent> EnrollmentFailed { get; private set; } = default!;
 
+    // Define Schedules
+    public Schedule<EnrollmentState, PaymentTimeoutExpired> PaymentTimeout { get; private set; } = default!;
+
     public EnrollmentStateMachine(IHubContext<EnrollmentHub> hubContext)
     {
         _hubContext = hubContext;
         InstanceState(x => x.CurrentState);
+
+        // Configure Schedules
+        Schedule(() => PaymentTimeout, x => x.ExpirationTokenId, x =>
+        {
+            x.Delay = TimeSpan.FromMinutes(15);
+            x.Received = r => r.CorrelateById(context => context.Message.CorrelationId);
+        });
 
         // Configure correlation for events
         Event(() => PaymentInitiated, x => x.CorrelateById(context => context.Message.CorrelationId));
@@ -45,11 +55,13 @@ public class EnrollmentStateMachine : MassTransitStateMachine<EnrollmentState>
                     context.Saga.CourseId = context.Message.CourseId;
                     context.Saga.Amount = context.Message.Amount;
                 })
+                .Schedule(PaymentTimeout, context => context.Init<PaymentTimeoutExpired>(new { CorrelationId = context.Saga.CorrelationId }))
                 .TransitionTo(PaymentProcessing)
         );
 
         During(PaymentProcessing,
             When(PaymentCompleted)
+                .Unschedule(PaymentTimeout)
                 .Then(context =>
                 {
                     context.Saga.TransactionId = context.Message.TransactionId;
@@ -65,6 +77,21 @@ public class EnrollmentStateMachine : MassTransitStateMachine<EnrollmentState>
                 .TransitionTo(Enrolling),
 
             When(PaymentFailed)
+                .Unschedule(PaymentTimeout)
+                .TransitionTo(Failed),
+
+            When(PaymentTimeout.Received)
+                .ThenAsync(async context =>
+                {
+                    var userId = context.Saga.UserId;
+                    var courseId = context.Saga.CourseId;
+                    var connectionId = EnrollmentHub.GetConnectionId(userId);
+                    if (!string.IsNullOrEmpty(connectionId))
+                    {
+                        await _hubContext.Clients.Client(connectionId)
+                            .SendAsync("EnrollmentFailed", new { CourseId = courseId, Reason = "Payment Timeout (15 minutes expired)" });
+                    }
+                })
                 .TransitionTo(Failed)
         );
 

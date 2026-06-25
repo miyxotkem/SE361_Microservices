@@ -15,6 +15,13 @@ services:
     ports:
       - "6379:6379"
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+
   yarpapigateway:
     image: smartedu-gateway
     build:
@@ -22,6 +29,8 @@ services:
       dockerfile: ApiGateways/YarpApiGateway/Dockerfile
     ports:
       - "7000:8080"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     depends_on:
       - identity.api
       - course.api
@@ -47,6 +56,7 @@ services:
       - Jwt:Key=${JWT_KEY}
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     volumes:
       - ./firebase:/app/firebase
     healthcheck:
@@ -68,6 +78,7 @@ services:
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_COURSE=${FIREBASE_CREDENTIALS_JSON_COURSE}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     depends_on:
       - messagebroker
     volumes:
@@ -92,6 +103,7 @@ services:
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_EXAM=${FIREBASE_CREDENTIALS_JSON_EXAM}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     depends_on:
       - messagebroker
     volumes:
@@ -115,6 +127,7 @@ services:
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_NOTIFICATION=${FIREBASE_CREDENTIALS_JSON_NOTIFICATION}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     depends_on:
       - messagebroker
     volumes:
@@ -136,6 +149,7 @@ services:
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_COMMENT=${FIREBASE_CREDENTIALS_JSON_COMMENT}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     volumes:
       - ./firebase:/app/firebase
     healthcheck:
@@ -152,6 +166,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
+      - Redis:ConnectionString=redis:6379
       - ConnectionStrings:DefaultConnection=${PAYMENT_DB_CONNECTION}
       - Jwt:Key=${JWT_KEY}
       - Jwt:Issuer=${JWT_ISSUER}
@@ -159,8 +174,10 @@ services:
       - VnPay:HashSecret=${VNPAY_HASH_SECRET}
       - MoMo:SecretKey=${MOMO_SECRET_KEY}
       - PayPal:SecretKey=${PAYPAL_SECRET_KEY}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     depends_on:
       - messagebroker
+      - redis
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s

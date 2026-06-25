@@ -7,8 +7,12 @@ using BuildingBlocks.Behaviors;
 using BuildingBlocks.Exceptions.Handler;
 using BuildingBlocks.Helpers;
 using BuildingBlocks.Messaging.MassTransit;
+using BuildingBlocks.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add OpenTelemetry Tracing
+builder.Services.AddOpenTelemetryTracing(builder.Configuration, "Notification.API");
 
 // Load Firebase Credentials (prioritize environment variable)
 GoogleCredential? googleCredential = null;
@@ -57,7 +61,8 @@ builder.Services.AddSingleton(provider =>
 });
 
 builder.Services.AddHealthChecks()
-    .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore");
+    .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore")
+    .AddRabbitMQ(builder.Configuration);
 
 // Add JWT Authentication
 builder.Services.AddJwtAuthentication(builder.Configuration);

@@ -6,8 +6,12 @@ using Carter;
 using BuildingBlocks.Behaviors;
 using BuildingBlocks.Exceptions.Handler;
 using BuildingBlocks.Helpers;
+using BuildingBlocks.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add OpenTelemetry Tracing
+builder.Services.AddOpenTelemetryTracing(builder.Configuration, "Comment.API");
 
 // Load Firebase Credentials (prioritize environment variable)
 GoogleCredential? googleCredential = null;
