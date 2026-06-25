@@ -1,6 +1,5 @@
 global using BuildingBlocks.CQRS;
 global using Carter;
-global using Google.Cloud.Firestore;
 global using MediatR;
 global using Microsoft.AspNetCore.Builder;
 global using Microsoft.AspNetCore.Http;
