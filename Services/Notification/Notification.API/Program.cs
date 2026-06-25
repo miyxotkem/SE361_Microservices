@@ -13,10 +13,10 @@ using BuildingBlocks.Messaging.MassTransit;
 var builder = WebApplication.CreateBuilder(args);
 
 // Config path for Firebase credential
-var pathJson = Path.Combine(builder.Environment.ContentRootPath, "firebase", "firebase_json.json");
+var pathJson = Path.Combine(builder.Environment.ContentRootPath, "firebase", "firebase_notification.json");
 if (!File.Exists(pathJson))
 {
-    var parentFirebase = Path.Combine(Directory.GetCurrentDirectory(), "firebase", "firebase_json.json");
+    var parentFirebase = Path.Combine(Directory.GetCurrentDirectory(), "firebase", "firebase_notification.json");
     if (File.Exists(parentFirebase))
     {
         pathJson = parentFirebase;
@@ -50,7 +50,7 @@ builder.Services.AddSingleton(provider =>
         Credential = credential
     }.Build();
     
-    return FirestoreDb.Create("e-learning-cd1b3", firestoreClient);
+    return FirestoreDb.Create("notification-db-9b061", firestoreClient);
 });
 
 // Add JWT Authentication
@@ -71,6 +71,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+
+// Register gRPC Client for CourseProtoService
+builder.Services.AddGrpcClient<Course.API.Grpc.CourseProtoService.CourseProtoServiceClient>(options =>
+{
+    options.Address = new Uri(builder.Configuration["GrpcSettings:CourseUrl"] ?? "http://localhost:7002");
+});
 
 // Add Carter & MediatR
 var assembly = typeof(Program).Assembly;

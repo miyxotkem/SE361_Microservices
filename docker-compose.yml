@@ -78,6 +78,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
+      - GrpcSettings:CourseUrl=http://course.api:8081
     depends_on:
       - messagebroker
     volumes:

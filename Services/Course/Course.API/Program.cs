@@ -15,10 +15,10 @@ using Course.API.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Config path for Firebase credential
-var pathJson = Path.Combine(builder.Environment.ContentRootPath, "firebase", "firebase_json.json");
+var pathJson = Path.Combine(builder.Environment.ContentRootPath, "firebase", "firebase_course.json");
 if (!File.Exists(pathJson))
 {
-    var parentFirebase = Path.Combine(Directory.GetCurrentDirectory(), "firebase", "firebase_json.json");
+    var parentFirebase = Path.Combine(Directory.GetCurrentDirectory(), "firebase", "firebase_course.json");
     if (File.Exists(parentFirebase))
     {
         pathJson = parentFirebase;
@@ -52,7 +52,7 @@ builder.Services.AddSingleton(provider =>
         Credential = credential
     }.Build();
     
-    return FirestoreDb.Create("e-learning-cd1b3", firestoreClient);
+    return FirestoreDb.Create("course-db-28f2a", firestoreClient);
 });
 
 // Add JWT Authentication
