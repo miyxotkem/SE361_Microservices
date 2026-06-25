@@ -2,8 +2,11 @@ using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using Payment.API.Models;
 
 namespace Payment.API.Services
 {
@@ -113,6 +116,94 @@ namespace Payment.API.Services
         public bool ValidateWebhook(object webhookData)
         {
             return true;
+        }
+
+        public async Task<RefundResult> RefundAsync(
+            string transactionId, 
+            decimal amount, 
+            string reason, 
+            string? gatewayTransactionId, 
+            string? gatewayOrderId, 
+            DateTime originalCreatedAt)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(gatewayOrderId))
+                {
+                    return new RefundResult { Success = false, Message = "Missing VNPay TxnRef (GatewayOrderId)" };
+                }
+
+                var vnpayConfig = _configuration.GetSection("VnPay");
+                var vnp_TmnCode = vnpayConfig["TmnCode"] ?? "";
+                var vnp_HashSecret = vnpayConfig["HashSecret"] ?? "";
+                
+                var refundUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
+
+                var vnNow = DateTime.UtcNow.AddHours(7);
+                string vnp_RequestId = Guid.NewGuid().ToString();
+                string vnp_Version = "2.1.0";
+                string vnp_Command = "refund";
+                string vnp_TransactionType = "02"; // 02: Full Refund, 03: Partial Refund
+                string vnp_TxnRef = gatewayOrderId;
+                long vnp_Amount = (long)(amount * 100);
+                string vnp_TransactionNo = gatewayTransactionId ?? "0";
+                string vnp_TransactionDate = originalCreatedAt.AddHours(7).ToString("yyyyMMddHHmmss");
+                string vnp_CreateBy = "System";
+                string vnp_CreateDate = vnNow.ToString("yyyyMMddHHmmss");
+                string vnp_IpAddr = "127.0.0.1";
+                string vnp_OrderInfo = reason;
+
+                // Format: vnp_RequestId|vnp_Version|vnp_Command|vnp_TmnCode|vnp_TransactionType|vnp_TxnRef|vnp_Amount|vnp_TransactionNo|vnp_TransactionDate|vnp_CreateBy|vnp_CreateDate|vnp_IpAddr|vnp_OrderInfo
+                string signData = $"{vnp_RequestId}|{vnp_Version}|{vnp_Command}|{vnp_TmnCode}|{vnp_TransactionType}|{vnp_TxnRef}|{vnp_Amount}|{vnp_TransactionNo}|{vnp_TransactionDate}|{vnp_CreateBy}|{vnp_CreateDate}|{vnp_IpAddr}|{vnp_OrderInfo}";
+
+                string vnp_SecureHash = HmacSHA512(vnp_HashSecret, signData);
+
+                var requestData = new
+                {
+                    vnp_RequestId,
+                    vnp_Version,
+                    vnp_Command,
+                    vnp_TmnCode,
+                    vnp_TransactionType,
+                    vnp_TxnRef,
+                    vnp_Amount,
+                    vnp_TransactionNo,
+                    vnp_TransactionDate,
+                    vnp_CreateBy,
+                    vnp_CreateDate,
+                    vnp_IpAddr,
+                    vnp_OrderInfo,
+                    vnp_SecureHash
+                };
+
+                using var httpClient = new HttpClient();
+                var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync(refundUrl, content);
+                var responseString = await response.Content.ReadAsStringAsync();
+
+                using var document = JsonDocument.Parse(responseString);
+                if (document.RootElement.TryGetProperty("vnp_ResponseCode", out var responseCodeElement))
+                {
+                    string responseCode = responseCodeElement.GetString() ?? "";
+                    if (responseCode == "00")
+                    {
+                        return new RefundResult
+                        {
+                            Success = true,
+                            Message = "Refund processed successfully via VNPay",
+                            GatewayRefundId = document.RootElement.TryGetProperty("vnp_ResponseId", out var respId) ? respId.GetString() : null
+                        };
+                    }
+                    string message = document.RootElement.TryGetProperty("vnp_Message", out var msg) ? msg.GetString() ?? "" : "";
+                    return new RefundResult { Success = false, Message = $"VNPay refund failed (Code: {responseCode}): {message}" };
+                }
+
+                return new RefundResult { Success = false, Message = $"VNPay refund failed, response: {responseString}" };
+            }
+            catch (Exception ex)
+            {
+                return new RefundResult { Success = false, Message = $"VNPay refund exception: {ex.Message}" };
+            }
         }
 
         private string HmacSHA512(string key, string inputData)

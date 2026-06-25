@@ -171,6 +171,8 @@ namespace Payment.API.Controllers
 
             // Verify signature for VNPay, or capture for PayPal
             bool isSuccess = true; 
+            string? gatewayTransactionId = null;
+            string? gatewayOrderId = null;
 
             if (method.Equals("VNPay", StringComparison.OrdinalIgnoreCase))
             {
@@ -178,6 +180,11 @@ namespace Payment.API.Controllers
                 if (vnpayService != null && payload.QueryParams != null)
                 {
                     isSuccess = vnpayService.ValidateSignature(payload.QueryParams);
+                    if (isSuccess)
+                    {
+                        payload.QueryParams.TryGetValue("vnp_TransactionNo", out gatewayTransactionId);
+                        payload.QueryParams.TryGetValue("vnp_TxnRef", out gatewayOrderId);
+                    }
                 }
                 else
                 {
@@ -189,7 +196,10 @@ namespace Payment.API.Controllers
                 var paypalService = _paymentServices.OfType<PayPalService>().FirstOrDefault();
                 if (paypalService != null && !string.IsNullOrEmpty(payload.GatewayOrderId))
                 {
-                    isSuccess = await paypalService.CaptureOrderAsync(payload.GatewayOrderId);
+                    var captureResult = await paypalService.CaptureOrderAsync(payload.GatewayOrderId);
+                    isSuccess = captureResult.Success;
+                    gatewayTransactionId = captureResult.CaptureId;
+                    gatewayOrderId = payload.GatewayOrderId;
                 }
                 else
                 {
@@ -219,6 +229,11 @@ namespace Payment.API.Controllers
             if (transaction != null)
             {
                 transaction.Status = isSuccess ? "Success" : "Failed";
+                if (isSuccess)
+                {
+                    if (gatewayTransactionId != null) transaction.GatewayTransactionId = gatewayTransactionId;
+                    if (gatewayOrderId != null) transaction.GatewayOrderId = gatewayOrderId;
+                }
                 await _dbContext.SaveChangesAsync();
             }
 
@@ -241,7 +256,8 @@ namespace Payment.API.Controllers
             }
 
             // Capture the order using the token (which is the orderId in PayPal v2)
-            bool isSuccess = await paypalService.CaptureOrderAsync(token);
+            var captureResult = await paypalService.CaptureOrderAsync(token);
+            bool isSuccess = captureResult.Success;
 
             Guid correlationId;
             if (!Guid.TryParse(transactionId, out correlationId))
@@ -254,6 +270,11 @@ namespace Payment.API.Controllers
             if (transaction != null)
             {
                 transaction.Status = isSuccess ? "Success" : "Failed";
+                if (isSuccess)
+                {
+                    transaction.GatewayTransactionId = captureResult.CaptureId;
+                    transaction.GatewayOrderId = token;
+                }
                 await _dbContext.SaveChangesAsync();
             }
 
@@ -278,6 +299,59 @@ namespace Payment.API.Controllers
                 
                 return Content("<html><body><h2>Thanh toán thất bại!</h2><p>Vui lòng quay lại ứng dụng và thử lại.</p></body></html>", "text/html");
             }
+        }
+
+        [HttpPost("refund/{transactionId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Refund(string transactionId, [FromBody] RefundRequest request)
+        {
+            var transaction = await _dbContext.TransactionRecords.FirstOrDefaultAsync(t => t.TransactionId == transactionId);
+            if (transaction == null)
+            {
+                return NotFound(new { Message = "Transaction not found." });
+            }
+
+            if (transaction.Status != "Success" && transaction.Status != "Completed")
+            {
+                return BadRequest(new { Message = "Transaction is not successful and cannot be refunded." });
+            }
+
+            IPaymentGatewayService? service = transaction.PaymentMethod switch
+            {
+                "VNPay" => _paymentServices.OfType<VnPayService>().FirstOrDefault(),
+                "MoMo" => _paymentServices.OfType<MoMoService>().FirstOrDefault(),
+                "PayPal" => _paymentServices.OfType<PayPalService>().FirstOrDefault(),
+                _ => null
+            };
+
+            if (service == null)
+            {
+                return BadRequest(new { Message = $"Unsupported payment method: {transaction.PaymentMethod}" });
+            }
+
+            decimal refundAmount = request.Amount ?? transaction.Amount;
+            if (refundAmount <= 0 || refundAmount > transaction.Amount)
+            {
+                return BadRequest(new { Message = $"Invalid refund amount. Must be between 0 and {transaction.Amount}." });
+            }
+
+            var result = await service.RefundAsync(
+                transaction.TransactionId,
+                refundAmount,
+                request.Reason,
+                transaction.GatewayTransactionId,
+                transaction.GatewayOrderId,
+                transaction.CreatedAt
+            );
+
+            if (result.Success)
+            {
+                transaction.Status = refundAmount == transaction.Amount ? "Refunded" : "PartiallyRefunded";
+                await _dbContext.SaveChangesAsync();
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
     }
 }
