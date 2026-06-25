@@ -6,11 +6,13 @@ using Payment.API.Services;
 using BuildingBlocks.Messaging.Events;
 using Microsoft.EntityFrameworkCore;
 using Payment.API.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Payment.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class PaymentController : ControllerBase
     {
         private readonly IEnumerable<IPaymentGatewayService> _paymentServices;
@@ -131,6 +133,7 @@ namespace Payment.API.Controllers
         }
 
         [HttpPost("webhook/{method}")]
+        [AllowAnonymous]
         public async Task<IActionResult> Webhook(string method, [FromBody] WebhookPayload payload)
         {
             if (payload == null || string.IsNullOrEmpty(payload.UserId) || string.IsNullOrEmpty(payload.CourseId))
@@ -203,6 +206,7 @@ namespace Payment.API.Controllers
         }
 
         [HttpGet("paypal/return")]
+        [AllowAnonymous]
         public async Task<IActionResult> PayPalReturn([FromQuery] string token, [FromQuery] string PayerID, [FromQuery] string transactionId)
         {
             if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(transactionId))

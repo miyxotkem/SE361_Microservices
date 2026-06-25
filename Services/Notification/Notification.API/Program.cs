@@ -1,9 +1,7 @@
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using BuildingBlocks.Security;
 using Carter;
 using BuildingBlocks.Behaviors;
 using BuildingBlocks.Exceptions.Handler;
@@ -57,23 +55,7 @@ builder.Services.AddHealthChecks()
     .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore");
 
 // Add JWT Authentication
-var jwtkey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_smartedu_1234567890";
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "SmartEdu",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "SmartEduClient",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtkey))
-        };
-    });
-
-builder.Services.AddAuthorization();
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Register gRPC Client for CourseProtoService
 builder.Services.AddGrpcClient<Course.API.Grpc.CourseProtoService.CourseProtoServiceClient>(options =>

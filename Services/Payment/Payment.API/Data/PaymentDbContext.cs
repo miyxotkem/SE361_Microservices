@@ -33,7 +33,7 @@ namespace Payment.API.Data
                     Code = "DISCOUNT20",
                     DiscountPercentage = 20,
                     MaxDiscountAmount = 100000,
-                    ExpiryDate = DateTime.UtcNow.AddYears(10),
+                    ExpiryDate = new DateTime(2036, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     IsActive = true
                 }
             );

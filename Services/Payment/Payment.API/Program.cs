@@ -2,6 +2,7 @@ using BuildingBlocks.Messaging.MassTransit;
 using Payment.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Payment.API.Data;
+using BuildingBlocks.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
+
+// Add JWT Authentication
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Register Supabase PostgreSQL DbContext
 builder.Services.AddDbContext<PaymentDbContext>(options =>
@@ -44,6 +48,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
