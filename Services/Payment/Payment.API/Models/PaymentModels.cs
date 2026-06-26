@@ -28,6 +28,8 @@ namespace Payment.API.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string Status { get; set; } = "Pending";
         public string? VoucherCode { get; set; }
+        public string? GatewayTransactionId { get; set; } // vnp_TransactionNo (VNPay), transId (MoMo), captureId (PayPal)
+        public string? GatewayOrderId { get; set; }       // vnp_TxnRef (VNPay), orderId (MoMo), token/orderId (PayPal)
     }
 
     public class Voucher
@@ -37,5 +39,18 @@ namespace Payment.API.Models
         public decimal MaxDiscountAmount { get; set; }
         public DateTime ExpiryDate { get; set; }
         public bool IsActive { get; set; } = true;
+    }
+
+    public class RefundRequest
+    {
+        public string Reason { get; set; } = "Requested by user";
+        public decimal? Amount { get; set; }
+    }
+
+    public class RefundResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string? GatewayRefundId { get; set; }
     }
 }
