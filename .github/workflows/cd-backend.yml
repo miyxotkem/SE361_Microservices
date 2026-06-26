@@ -65,8 +65,8 @@ jobs:
         run: |
           cd ~/app/SE361_Microservices
           git pull origin main
-          docker-compose build yarpapigateway
-          docker-compose up -d --no-deps yarpapigateway
+          docker compose build yarpapigateway
+          docker compose up -d --no-deps yarpapigateway
 
   build-and-deploy-identity:
     name: Build & Deploy Identity
@@ -81,8 +81,8 @@ jobs:
         run: |
           cd ~/app/SE361_Microservices
           git pull origin main
-          docker-compose build identity.api
-          docker-compose up -d --no-deps identity.api
+          docker compose build identity.api
+          docker compose up -d --no-deps identity.api
 
   build-and-deploy-course:
     name: Build & Deploy Course
@@ -97,8 +97,8 @@ jobs:
         run: |
           cd ~/app/SE361_Microservices
           git pull origin main
-          docker-compose build course.api
-          docker-compose up -d --no-deps course.api
+          docker compose build course.api
+          docker compose up -d --no-deps course.api
 
   build-and-deploy-exam:
     name: Build & Deploy Exam
@@ -113,8 +113,8 @@ jobs:
         run: |
           cd ~/app/SE361_Microservices
           git pull origin main
-          docker-compose build exam.api
-          docker-compose up -d --no-deps exam.api
+          docker compose build exam.api
+          docker compose up -d --no-deps exam.api
 
   build-and-deploy-notification:
     name: Build & Deploy Notification
@@ -129,8 +129,8 @@ jobs:
         run: |
           cd ~/app/SE361_Microservices
           git pull origin main
-          docker-compose build notification.api
-          docker-compose up -d --no-deps notification.api
+          docker compose build notification.api
+          docker compose up -d --no-deps notification.api
 
   build-and-deploy-comment:
     name: Build & Deploy Comment
@@ -145,8 +145,8 @@ jobs:
         run: |
           cd ~/app/SE361_Microservices
           git pull origin main
-          docker-compose build comment.api
-          docker-compose up -d --no-deps comment.api
+          docker compose build comment.api
+          docker compose up -d --no-deps comment.api
 
   build-and-deploy-payment:
     name: Build & Deploy Payment
@@ -161,5 +161,5 @@ jobs:
         run: |
           cd ~/app/SE361_Microservices
           git pull origin main
-          docker-compose build payment.api
-          docker-compose up -d --no-deps payment.api
+          docker compose build payment.api
+          docker compose up -d --no-deps payment.api
