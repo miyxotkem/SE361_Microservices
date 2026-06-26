@@ -61,11 +61,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy Env File
-        run: cp ~/app/SE361_Microservices/.env .env || true
-
-      - name: Build & Restart Container
+      - name: Deploy Local
         run: |
+          cd ~/app/SE361_Microservices
+          git pull origin main
           docker-compose build yarpapigateway
           docker-compose up -d yarpapigateway
 
@@ -78,11 +77,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy Env File
-        run: cp ~/app/SE361_Microservices/.env .env || true
-
-      - name: Build & Restart Container
+      - name: Deploy Local
         run: |
+          cd ~/app/SE361_Microservices
+          git pull origin main
           docker-compose build identity.api
           docker-compose up -d identity.api
 
@@ -95,11 +93,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy Env File
-        run: cp ~/app/SE361_Microservices/.env .env || true
-
-      - name: Build & Restart Container
+      - name: Deploy Local
         run: |
+          cd ~/app/SE361_Microservices
+          git pull origin main
           docker-compose build course.api
           docker-compose up -d course.api
 
@@ -112,11 +109,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy Env File
-        run: cp ~/app/SE361_Microservices/.env .env || true
-
-      - name: Build & Restart Container
+      - name: Deploy Local
         run: |
+          cd ~/app/SE361_Microservices
+          git pull origin main
           docker-compose build exam.api
           docker-compose up -d exam.api
 
@@ -129,11 +125,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy Env File
-        run: cp ~/app/SE361_Microservices/.env .env || true
-
-      - name: Build & Restart Container
+      - name: Deploy Local
         run: |
+          cd ~/app/SE361_Microservices
+          git pull origin main
           docker-compose build notification.api
           docker-compose up -d notification.api
 
@@ -146,11 +141,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy Env File
-        run: cp ~/app/SE361_Microservices/.env .env || true
-
-      - name: Build & Restart Container
+      - name: Deploy Local
         run: |
+          cd ~/app/SE361_Microservices
+          git pull origin main
           docker-compose build comment.api
           docker-compose up -d comment.api
 
@@ -163,10 +157,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy Env File
-        run: cp ~/app/SE361_Microservices/.env .env || true
-
-      - name: Build & Restart Container
+      - name: Deploy Local
         run: |
+          cd ~/app/SE361_Microservices
+          git pull origin main
           docker-compose build payment.api
           docker-compose up -d payment.api
