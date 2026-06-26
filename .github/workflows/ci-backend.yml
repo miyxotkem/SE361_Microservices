@@ -1,0 +1,101 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'Services/**'
+      - 'BuildingBlocks/**'
+      - 'ApiGateways/**'
+      - '.github/workflows/ci-backend.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'Services/**'
+      - 'BuildingBlocks/**'
+      - 'ApiGateways/**'
+      - '.github/workflows/ci-backend.yml'
+
+jobs:
+  build-and-test:
+    name: Build & Test Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.sln') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore NuGet Packages
+        run: |
+          dotnet restore Services/Identity/Identity.API/Identity.API.csproj
+          dotnet restore Services/Course/Course.API/Course.API.csproj
+          dotnet restore Services/Notification/Notification.API/Notification.API.csproj
+          dotnet restore Services/Comment/Comment.API/Comment.API.csproj
+          dotnet restore Services/Exam/Exam.API/Exam.API.csproj
+          dotnet restore Services/Payment/Payment.API/Payment.API.csproj
+          dotnet restore ApiGateways/YarpApiGateway/YarpApiGateway.csproj
+
+      - name: Build API Services
+        run: |
+          dotnet build Services/Identity/Identity.API/Identity.API.csproj -c Release --no-restore
+          dotnet build Services/Course/Course.API/Course.API.csproj -c Release --no-restore
+          dotnet build Services/Notification/Notification.API/Notification.API.csproj -c Release --no-restore
+          dotnet build Services/Comment/Comment.API/Comment.API.csproj -c Release --no-restore
+          dotnet build Services/Exam/Exam.API/Exam.API.csproj -c Release --no-restore
+          dotnet build Services/Payment/Payment.API/Payment.API.csproj -c Release --no-restore
+          dotnet build ApiGateways/YarpApiGateway/YarpApiGateway.csproj -c Release --no-restore
+
+  docker-lint-and-build:
+    name: Docker Build Validation
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: identity
+            path: Services/Identity/Identity.API/Dockerfile
+          - name: course
+            path: Services/Course/Course.API/Dockerfile
+          - name: exam
+            path: Services/Exam/Exam.API/Dockerfile
+          - name: notification
+            path: Services/Notification/Notification.API/Dockerfile
+          - name: comment
+            path: Services/Comment/Comment.API/Dockerfile
+          - name: payment
+            path: Services/Payment/Payment.API/Dockerfile
+          - name: gateway
+            path: ApiGateways/YarpApiGateway/Dockerfile
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Dockerfile Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.service.path }}
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
