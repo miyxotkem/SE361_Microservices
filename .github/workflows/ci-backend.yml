@@ -21,10 +21,52 @@ on:
       - '.github/workflows/ci-backend.yml'
 
 jobs:
-  build-and-test:
-    name: Build & Test Backend
+  detect-changes:
+    name: Detect Changed Services
     runs-on: ubuntu-latest
+    outputs:
+      shared: ${{ steps.filter.outputs.shared }}
+      workflow: ${{ steps.filter.outputs.workflow }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      identity: ${{ steps.filter.outputs.identity }}
+      course: ${{ steps.filter.outputs.course }}
+      exam: ${{ steps.filter.outputs.exam }}
+      notification: ${{ steps.filter.outputs.notification }}
+      comment: ${{ steps.filter.outputs.comment }}
+      payment: ${{ steps.filter.outputs.payment }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
+      - name: Path Filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            shared:
+              - 'BuildingBlocks/**'
+            workflow:
+              - '.github/workflows/ci-backend.yml'
+            gateway:
+              - 'ApiGateways/YarpApiGateway/**'
+            identity:
+              - 'Services/Identity/**'
+            course:
+              - 'Services/Course/**'
+            exam:
+              - 'Services/Exam/**'
+            notification:
+              - 'Services/Notification/**'
+            comment:
+              - 'Services/Comment/**'
+            payment:
+              - 'Services/Payment/**'
+
+  ci-gateway:
+    name: CI Gateway
+    needs: detect-changes
+    if: needs.detect-changes.outputs.gateway == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -34,59 +76,8 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Cache NuGet Packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.sln') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Restore NuGet Packages
-        run: |
-          dotnet restore Services/Identity/Identity.API/Identity.API.csproj
-          dotnet restore Services/Course/Course.API/Course.API.csproj
-          dotnet restore Services/Notification/Notification.API/Notification.API.csproj
-          dotnet restore Services/Comment/Comment.API/Comment.API.csproj
-          dotnet restore Services/Exam/Exam.API/Exam.API.csproj
-          dotnet restore Services/Payment/Payment.API/Payment.API.csproj
-          dotnet restore ApiGateways/YarpApiGateway/YarpApiGateway.csproj
-
-      - name: Build API Services
-        run: |
-          dotnet build Services/Identity/Identity.API/Identity.API.csproj -c Release --no-restore
-          dotnet build Services/Course/Course.API/Course.API.csproj -c Release --no-restore
-          dotnet build Services/Notification/Notification.API/Notification.API.csproj -c Release --no-restore
-          dotnet build Services/Comment/Comment.API/Comment.API.csproj -c Release --no-restore
-          dotnet build Services/Exam/Exam.API/Exam.API.csproj -c Release --no-restore
-          dotnet build Services/Payment/Payment.API/Payment.API.csproj -c Release --no-restore
-          dotnet build ApiGateways/YarpApiGateway/YarpApiGateway.csproj -c Release --no-restore
-
-  docker-lint-and-build:
-    name: Docker Build Validation
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - name: identity
-            path: Services/Identity/Identity.API/Dockerfile
-          - name: course
-            path: Services/Course/Course.API/Dockerfile
-          - name: exam
-            path: Services/Exam/Exam.API/Dockerfile
-          - name: notification
-            path: Services/Notification/Notification.API/Dockerfile
-          - name: comment
-            path: Services/Comment/Comment.API/Dockerfile
-          - name: payment
-            path: Services/Payment/Payment.API/Dockerfile
-          - name: gateway
-            path: ApiGateways/YarpApiGateway/Dockerfile
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Build Service
+        run: dotnet build ApiGateways/YarpApiGateway/YarpApiGateway.csproj -c Release
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -95,7 +86,181 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ${{ matrix.service.path }}
+          file: ApiGateways/YarpApiGateway/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  ci-identity:
+    name: CI Identity
+    needs: detect-changes
+    if: needs.detect-changes.outputs.identity == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build Service
+        run: dotnet build Services/Identity/Identity.API/Identity.API.csproj -c Release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Dockerfile Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Services/Identity/Identity.API/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  ci-course:
+    name: CI Course
+    needs: detect-changes
+    if: needs.detect-changes.outputs.course == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build Service
+        run: dotnet build Services/Course/Course.API/Course.API.csproj -c Release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Dockerfile Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Services/Course/Course.API/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  ci-exam:
+    name: CI Exam
+    needs: detect-changes
+    if: needs.detect-changes.outputs.exam == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build Service
+        run: dotnet build Services/Exam/Exam.API/Exam.API.csproj -c Release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Dockerfile Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Services/Exam/Exam.API/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  ci-notification:
+    name: CI Notification
+    needs: detect-changes
+    if: needs.detect-changes.outputs.notification == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build Service
+        run: dotnet build Services/Notification/Notification.API/Notification.API.csproj -c Release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Dockerfile Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Services/Notification/Notification.API/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  ci-comment:
+    name: CI Comment
+    needs: detect-changes
+    if: needs.detect-changes.outputs.comment == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build Service
+        run: dotnet build Services/Comment/Comment.API/Comment.API.csproj -c Release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Dockerfile Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Services/Comment/Comment.API/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  ci-payment:
+    name: CI Payment
+    needs: detect-changes
+    if: needs.detect-changes.outputs.payment == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build Service
+        run: dotnet build Services/Payment/Payment.API/Payment.API.csproj -c Release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Dockerfile Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Services/Payment/Payment.API/Dockerfile
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
