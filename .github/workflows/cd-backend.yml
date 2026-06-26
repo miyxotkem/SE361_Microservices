@@ -66,7 +66,7 @@ jobs:
           cd ~/app/SE361_Microservices
           git pull origin main
           docker-compose build yarpapigateway
-          docker-compose up -d yarpapigateway
+          docker-compose up -d --no-deps yarpapigateway
 
   build-and-deploy-identity:
     name: Build & Deploy Identity
@@ -82,7 +82,7 @@ jobs:
           cd ~/app/SE361_Microservices
           git pull origin main
           docker-compose build identity.api
-          docker-compose up -d identity.api
+          docker-compose up -d --no-deps identity.api
 
   build-and-deploy-course:
     name: Build & Deploy Course
@@ -98,7 +98,7 @@ jobs:
           cd ~/app/SE361_Microservices
           git pull origin main
           docker-compose build course.api
-          docker-compose up -d course.api
+          docker-compose up -d --no-deps course.api
 
   build-and-deploy-exam:
     name: Build & Deploy Exam
@@ -114,7 +114,7 @@ jobs:
           cd ~/app/SE361_Microservices
           git pull origin main
           docker-compose build exam.api
-          docker-compose up -d exam.api
+          docker-compose up -d --no-deps exam.api
 
   build-and-deploy-notification:
     name: Build & Deploy Notification
@@ -130,7 +130,7 @@ jobs:
           cd ~/app/SE361_Microservices
           git pull origin main
           docker-compose build notification.api
-          docker-compose up -d notification.api
+          docker-compose up -d --no-deps notification.api
 
   build-and-deploy-comment:
     name: Build & Deploy Comment
@@ -146,7 +146,7 @@ jobs:
           cd ~/app/SE361_Microservices
           git pull origin main
           docker-compose build comment.api
-          docker-compose up -d comment.api
+          docker-compose up -d --no-deps comment.api
 
   build-and-deploy-payment:
     name: Build & Deploy Payment
@@ -162,4 +162,4 @@ jobs:
           cd ~/app/SE361_Microservices
           git pull origin main
           docker-compose build payment.api
-          docker-compose up -d payment.api
+          docker-compose up -d --no-deps payment.api
