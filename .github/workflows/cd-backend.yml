@@ -9,6 +9,9 @@ on:
       - 'BuildingBlocks/**'
       - 'ApiGateways/**'
       - '.github/workflows/cd-backend.yml'
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   detect-changes:
