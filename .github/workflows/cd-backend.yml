@@ -66,8 +66,8 @@ jobs:
 
       - name: Build & Restart Container
         run: |
-          docker compose build yarpapigateway
-          docker compose up -d yarpapigateway
+          docker-compose build yarpapigateway
+          docker-compose up -d yarpapigateway
 
   build-and-deploy-identity:
     name: Build & Deploy Identity
@@ -83,8 +83,8 @@ jobs:
 
       - name: Build & Restart Container
         run: |
-          docker compose build identity.api
-          docker compose up -d identity.api
+          docker-compose build identity.api
+          docker-compose up -d identity.api
 
   build-and-deploy-course:
     name: Build & Deploy Course
@@ -100,8 +100,8 @@ jobs:
 
       - name: Build & Restart Container
         run: |
-          docker compose build course.api
-          docker compose up -d course.api
+          docker-compose build course.api
+          docker-compose up -d course.api
 
   build-and-deploy-exam:
     name: Build & Deploy Exam
@@ -117,8 +117,8 @@ jobs:
 
       - name: Build & Restart Container
         run: |
-          docker compose build exam.api
-          docker compose up -d exam.api
+          docker-compose build exam.api
+          docker-compose up -d exam.api
 
   build-and-deploy-notification:
     name: Build & Deploy Notification
@@ -134,8 +134,8 @@ jobs:
 
       - name: Build & Restart Container
         run: |
-          docker compose build notification.api
-          docker compose up -d notification.api
+          docker-compose build notification.api
+          docker-compose up -d notification.api
 
   build-and-deploy-comment:
     name: Build & Deploy Comment
@@ -151,8 +151,8 @@ jobs:
 
       - name: Build & Restart Container
         run: |
-          docker compose build comment.api
-          docker compose up -d comment.api
+          docker-compose build comment.api
+          docker-compose up -d comment.api
 
   build-and-deploy-payment:
     name: Build & Deploy Payment
@@ -168,5 +168,5 @@ jobs:
 
       - name: Build & Restart Container
         run: |
-          docker compose build payment.api
-          docker compose up -d payment.api
+          docker-compose build payment.api
+          docker-compose up -d payment.api
