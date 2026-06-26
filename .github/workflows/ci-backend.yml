@@ -108,6 +108,11 @@ jobs:
       - name: Build Service
         run: dotnet build Services/Identity/Identity.API/Identity.API.csproj -c Release
 
+      - name: Run Tests
+        run: |
+          dotnet test tests/Services/Identity/Identity.API.Tests/Identity.API.Tests.csproj -c Release
+          dotnet test tests/Services/Identity/Identity.API.IntegrationTests/Identity.API.IntegrationTests.csproj -c Release
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -136,6 +141,11 @@ jobs:
 
       - name: Build Service
         run: dotnet build Services/Course/Course.API/Course.API.csproj -c Release
+
+      - name: Run Tests
+        run: |
+          dotnet test tests/Services/Course/Course.API.Tests/Course.API.Tests.csproj -c Release
+          dotnet test tests/Services/Course/Course.API.IntegrationTests/Course.API.IntegrationTests.csproj -c Release
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -166,6 +176,11 @@ jobs:
       - name: Build Service
         run: dotnet build Services/Exam/Exam.API/Exam.API.csproj -c Release
 
+      - name: Run Tests
+        run: |
+          dotnet test tests/Services/Exam/Exam.Tests/Exam.Tests.csproj -c Release
+          dotnet test tests/Services/Exam/Exam.API.IntegrationTests/Exam.API.IntegrationTests.csproj -c Release
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -194,6 +209,11 @@ jobs:
 
       - name: Build Service
         run: dotnet build Services/Notification/Notification.API/Notification.API.csproj -c Release
+
+      - name: Run Tests
+        run: |
+          dotnet test tests/Services/Notification/Notification.API.Tests/Notification.API.Tests.csproj -c Release
+          dotnet test tests/Services/Notification/Notification.API.IntegrationTests/Notification.API.IntegrationTests.csproj -c Release
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -224,6 +244,11 @@ jobs:
       - name: Build Service
         run: dotnet build Services/Comment/Comment.API/Comment.API.csproj -c Release
 
+      - name: Run Tests
+        run: |
+          dotnet test tests/Services/Comment/Comment.API.Tests/Comment.API.Tests.csproj -c Release
+          dotnet test tests/Services/Comment/Comment.API.IntegrationTests/Comment.API.IntegrationTests.csproj -c Release
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -252,6 +277,11 @@ jobs:
 
       - name: Build Service
         run: dotnet build Services/Payment/Payment.API/Payment.API.csproj -c Release
+
+      - name: Run Tests
+        run: |
+          dotnet test tests/Services/Payment/Payment.API.Tests/Payment.API.Tests.csproj -c Release
+          dotnet test tests/Services/Payment/Payment.API.IntegrationTests/Payment.API.IntegrationTests.csproj -c Release
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

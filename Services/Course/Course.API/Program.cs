@@ -129,3 +129,5 @@ app.MapHub<Course.API.Hubs.EnrollmentHub>("/hubs/enrollment");
 app.MapHealthChecks("/health");
 
 app.Run();
+
+public partial class Program { }

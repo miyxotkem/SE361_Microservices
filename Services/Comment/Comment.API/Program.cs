@@ -94,3 +94,5 @@ app.UseExceptionHandler(options => { });
 app.MapHealthChecks("/health");
 
 app.Run();
+
+public partial class Program { }

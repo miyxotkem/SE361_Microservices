@@ -24,8 +24,26 @@ builder.Services.AddHttpClient();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Register Supabase PostgreSQL DbContext
-builder.Services.AddDbContext<PaymentDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<PaymentDbContext>((sp, options) =>
+{
+    var connString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (builder.Configuration["UseInMemoryDatabase"] == "true")
+    {
+        var connection = sp.GetService<System.Data.Common.DbConnection>();
+        if (connection != null)
+        {
+            options.UseSqlite(connection);
+        }
+        else
+        {
+            options.UseSqlite("DataSource=:memory:");
+        }
+    }
+    else
+    {
+        options.UseNpgsql(connString);
+    }
+});
 
 // Payment Services
 builder.Services.AddScoped<IPaymentGatewayService, VnPayService>();
@@ -46,7 +64,14 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
-    db.Database.Migrate();
+    if (db.Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL")
+    {
+        db.Database.Migrate();
+    }
+    else
+    {
+        db.Database.EnsureCreated();
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -62,3 +87,5 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 
 app.Run();
+
+public partial class Program { }

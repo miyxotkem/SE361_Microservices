@@ -12,8 +12,26 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenTelemetryTracing(builder.Configuration, "Identity.API");
 
 // Register Supabase PostgreSQL DbContext
-builder.Services.AddDbContext<IdentityDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<IdentityDbContext>((sp, options) =>
+{
+    var connString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (builder.Configuration["UseInMemoryDatabase"] == "true")
+    {
+        var connection = sp.GetService<System.Data.Common.DbConnection>();
+        if (connection != null)
+        {
+            options.UseSqlite(connection);
+        }
+        else
+        {
+            options.UseSqlite("DataSource=:memory:");
+        }
+    }
+    else
+    {
+        options.UseNpgsql(connString);
+    }
+});
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
@@ -41,7 +59,14 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-    db.Database.Migrate();
+    if (db.Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL")
+    {
+        db.Database.Migrate();
+    }
+    else
+    {
+        db.Database.EnsureCreated();
+    }
 }
 
 // Setup Pipeline
@@ -53,3 +78,5 @@ app.UseExceptionHandler(options => { });
 app.MapHealthChecks("/health");
 
 app.Run();
+
+public partial class Program { }
