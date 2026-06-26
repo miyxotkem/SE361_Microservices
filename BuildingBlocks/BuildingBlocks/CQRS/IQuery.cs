@@ -1,3 +1,4 @@
+// Trigger CI/CD pipeline for all services
 using MediatR;
 
 namespace BuildingBlocks.CQRS;
