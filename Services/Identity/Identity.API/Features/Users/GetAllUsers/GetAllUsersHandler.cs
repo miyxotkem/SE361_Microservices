@@ -10,7 +10,11 @@ using System.Threading.Tasks;
 
 namespace Identity.API.Features.Users.GetAllUsers
 {
-    public record GetAllUsersQuery() : IQuery<IResult>;
+    public record GetAllUsersQuery() : ICachedQuery<IResult>
+    {
+        public string CacheKey => "GetAllUsers";
+        public TimeSpan? Expiration => TimeSpan.FromMinutes(10);
+    }
 
     public class GetAllUsersQueryHandler : IQueryHandler<GetAllUsersQuery, IResult>
     {

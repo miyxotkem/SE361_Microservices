@@ -57,6 +57,9 @@ services:
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - Redis:ConnectionString=redis:6379
+    depends_on:
+      - redis
     volumes:
       - ./firebase:/app/firebase
     healthcheck:
@@ -104,8 +107,10 @@ services:
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_EXAM=${FIREBASE_CREDENTIALS_JSON_EXAM}
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - Redis:ConnectionString=redis:6379
     depends_on:
       - messagebroker
+      - redis
     volumes:
       - ./firebase:/app/firebase
     healthcheck:
@@ -150,6 +155,9 @@ services:
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_COMMENT=${FIREBASE_CREDENTIALS_JSON_COMMENT}
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - Redis:ConnectionString=redis:6379
+    depends_on:
+      - redis
     volumes:
       - ./firebase:/app/firebase
     healthcheck:

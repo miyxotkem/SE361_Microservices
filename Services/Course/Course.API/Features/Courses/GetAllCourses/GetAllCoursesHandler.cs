@@ -1,6 +1,8 @@
 using BuildingBlocks.CQRS;
 using Google.Cloud.Firestore;
 using MediatR;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
 
 namespace Course.API.Features.Courses.GetAllCourses
 {
@@ -9,14 +11,23 @@ namespace Course.API.Features.Courses.GetAllCourses
     public class GetAllCoursesQueryHandler : IQueryHandler<GetAllCoursesQuery, IResult>
     {
         private readonly FirestoreDb _firestoreDb;
+        private readonly IDistributedCache _cache;
 
-        public GetAllCoursesQueryHandler(FirestoreDb firestoreDb)
+        public GetAllCoursesQueryHandler(FirestoreDb firestoreDb, IDistributedCache cache)
         {
             _firestoreDb = firestoreDb;
+            _cache = cache;
         }
 
         public async Task<IResult> Handle(GetAllCoursesQuery request, CancellationToken cancellationToken)
         {
+            var cacheKey = "all_courses";
+            var cachedData = await _cache.GetStringAsync(cacheKey, cancellationToken);
+            if (!string.IsNullOrEmpty(cachedData))
+            {
+                return Results.Content(cachedData, "application/json");
+            }
+
             var snapshot = await _firestoreDb.Collection("Courses").GetSnapshotAsync(cancellationToken);
             var courses = new List<object>();
 
@@ -45,7 +56,13 @@ namespace Course.API.Features.Courses.GetAllCourses
                 });
             }
 
-            return Results.Ok(courses);
+            var jsonResult = JsonSerializer.Serialize(courses);
+            await _cache.SetStringAsync(cacheKey, jsonResult, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+            }, cancellationToken);
+
+            return Results.Content(jsonResult, "application/json");
         }
     }
 }

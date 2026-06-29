@@ -66,7 +66,13 @@ builder.Services.AddSingleton(provider =>
     return FirestoreDb.Create("exam-db-8e1b4", firestoreClient);
 });
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+});
+
 builder.Services.AddHealthChecks()
+    .AddRedis(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379", name: "redis")
     .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore")
     .AddRabbitMQ(builder.Configuration);
 
@@ -81,6 +87,7 @@ builder.Services.AddMediatR(config =>
     config.RegisterServicesFromAssembly(appAssembly);
     config.AddOpenBehavior(typeof(ValidationBehavior<,>));
     config.AddOpenBehavior(typeof(LoggingBehavior<,>));
+    config.AddOpenBehavior(typeof(CachingBehavior<,>));
 });
 
 // Register Exam Repository and Service Clients

@@ -63,6 +63,11 @@ builder.Services.AddSingleton(provider =>
     return FirestoreDb.Create("course-db-28f2a", firestoreClient);
 });
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+});
+
 builder.Services.AddHealthChecks()
     .AddRedis(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379", name: "redis")
     .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore")

@@ -11,7 +11,7 @@ namespace Identity.API.Features.Users.GetAllUsers
             {
                 var query = new GetAllUsersQuery();
                 return await sender.Send(query);
-            }).RequireAuthorization(policy => policy.RequireRole("Admin"));
+            });
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Comment.API.Features.Comments.GetComments
             {
                 var query = new GetCommentsQuery(lessonId);
                 return await sender.Send(query);
-            }).RequireAuthorization();
+            });
         }
     }
 }

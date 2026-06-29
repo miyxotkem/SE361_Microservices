@@ -59,7 +59,13 @@ builder.Services.AddSingleton(provider =>
     return FirestoreDb.Create("comment-db-10f06", firestoreClient);
 });
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+});
+
 builder.Services.AddHealthChecks()
+    .AddRedis(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379", name: "redis")
     .AddCheck<BuildingBlocks.HealthChecks.FirestoreHealthCheck>("firestore");
 
 // Add JWT Authentication
@@ -73,6 +79,7 @@ builder.Services.AddMediatR(config =>
     config.RegisterServicesFromAssembly(assembly);
     config.AddOpenBehavior(typeof(ValidationBehavior<,>));
     config.AddOpenBehavior(typeof(LoggingBehavior<,>));
+    config.AddOpenBehavior(typeof(CachingBehavior<,>));
 });
 
 // Configure JSON serialization to handle Firestore Timestamp

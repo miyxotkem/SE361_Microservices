@@ -1,11 +1,15 @@
+using System;
 using BuildingBlocks.CQRS;
 using Google.Cloud.Firestore;
 using MediatR;
 
 namespace Comment.API.Features.Comments.GetComments
 {
-    public record GetCommentsQuery(string LessonId) : IQuery<IResult>;
-
+    public record GetCommentsQuery(string LessonId) : ICachedQuery<IResult>
+    {
+        public string CacheKey => $"GetComments-{LessonId}";
+        public TimeSpan? Expiration => TimeSpan.FromMinutes(10);
+    }
     public class GetCommentsQueryHandler : IQueryHandler<GetCommentsQuery, IResult>
     {
         private readonly FirestoreDb _firestoreDb;

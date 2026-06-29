@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.RateLimiting;
+﻿using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using BuildingBlocks.Diagnostics;
 
@@ -14,7 +14,7 @@ builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("api-limiter", opt =>
     {
-        opt.PermitLimit = 100;
+        opt.PermitLimit = 10000;
         opt.Window = TimeSpan.FromSeconds(10);
         opt.QueueLimit = 10;
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;

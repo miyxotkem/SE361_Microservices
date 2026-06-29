@@ -33,7 +33,13 @@ builder.Services.AddDbContext<IdentityDbContext>((sp, options) =>
     }
 });
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+});
+
 builder.Services.AddHealthChecks()
+    .AddRedis(builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379", name: "redis")
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
 // Add JWT Authentication
@@ -48,6 +54,7 @@ builder.Services.AddMediatR(config =>
     config.RegisterServicesFromAssembly(assembly);
     config.AddOpenBehavior(typeof(ValidationBehavior<,>));
     config.AddOpenBehavior(typeof(LoggingBehavior<,>));
+    config.AddOpenBehavior(typeof(CachingBehavior<,>));
 });
 
 // Global Exception Handler
