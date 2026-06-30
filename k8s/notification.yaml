@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-deployment
+  labels:
+    app: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      imagePullSecrets:
+        - name: ghcr-io-registry-key
+      containers:
+        - name: notification-api
+          image: ghcr.io/username/smartedu-notification:latest # Placeholder, updated during CD
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 8081
+              name: grpc
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Development"
+            - name: MessageBroker__Host
+              value: "rabbitmq://messagebroker"
+            - name: GrpcSettings__CourseUrl
+              value: "http://course-service:8081"
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: smartedu-secrets
+                  key: JWT_KEY
+            - name: Jwt__Issuer
+              valueFrom:
+                secretKeyRef:
+                  name: smartedu-secrets
+                  key: JWT_ISSUER
+            - name: Jwt__Audience
+              valueFrom:
+                secretKeyRef:
+                  name: smartedu-secrets
+                  key: JWT_AUDIENCE
+            - name: FIREBASE_CREDENTIALS_JSON_NOTIFICATION
+              valueFrom:
+                secretKeyRef:
+                  name: smartedu-secrets
+                  key: FIREBASE_CREDENTIALS_JSON_NOTIFICATION
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://jaeger:4317"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+    - name: grpc
+      port: 8081
+      targetPort: 8081
+  type: ClusterIP

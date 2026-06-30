@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: course-deployment
+  labels:
+    app: course-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: course-service
+  template:
+    metadata:
+      labels:
+        app: course-service
+    spec:
+      imagePullSecrets:
+        - name: ghcr-io-registry-key
+      containers:
+        - name: course-api
+          image: ghcr.io/username/smartedu-course:latest # Placeholder, updated during CD
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 8081
+              name: grpc
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Development"
+            - name: MessageBroker__Host
+              value: "rabbitmq://messagebroker"
+            - name: Redis__ConnectionString
+              value: "redis:6379"
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: smartedu-secrets
+                  key: JWT_KEY
+            - name: Jwt__Issuer
+              valueFrom:
+                secretKeyRef:
+                  name: smartedu-secrets
+                  key: JWT_ISSUER
+            - name: Jwt__Audience
+              valueFrom:
+                secretKeyRef:
+                  name: smartedu-secrets
+                  key: JWT_AUDIENCE
+            - name: FIREBASE_CREDENTIALS_JSON_COURSE
+              valueFrom:
+                secretKeyRef:
+                  name: smartedu-secrets
+                  key: FIREBASE_CREDENTIALS_JSON_COURSE
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://jaeger:4317"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: course-service
+spec:
+  selector:
+    app: course-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+    - name: grpc
+      port: 8081
+      targetPort: 8081
+  type: ClusterIP
