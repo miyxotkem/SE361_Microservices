@@ -4,6 +4,9 @@ using BuildingBlocks.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add OpenTelemetry Logging
+builder.Logging.AddOpenTelemetryLogging(builder.Configuration);
+
 // Add services to the container.
 builder.Services.AddOpenTelemetryTracing(builder.Configuration, "YarpApiGateway");
 

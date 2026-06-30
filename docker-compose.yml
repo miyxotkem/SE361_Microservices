@@ -19,8 +19,6 @@ services:
     image: jaegertracing/all-in-one:latest
     ports:
       - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
 
   yarpapigateway:
     image: smartedu-gateway
@@ -30,7 +28,8 @@ services:
     ports:
       - "7000:8080"
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
     depends_on:
       - identity.api
       - course.api
@@ -56,8 +55,9 @@ services:
       - Jwt:Key=${JWT_KEY}
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - Redis:ConnectionString=redis:6379
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
     depends_on:
       - redis
     volumes:
@@ -81,7 +81,8 @@ services:
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_COURSE=${FIREBASE_CREDENTIALS_JSON_COURSE}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
     depends_on:
       - messagebroker
     volumes:
@@ -106,8 +107,9 @@ services:
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_EXAM=${FIREBASE_CREDENTIALS_JSON_EXAM}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - Redis:ConnectionString=redis:6379
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
     depends_on:
       - messagebroker
       - redis
@@ -132,7 +134,8 @@ services:
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_NOTIFICATION=${FIREBASE_CREDENTIALS_JSON_NOTIFICATION}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
     depends_on:
       - messagebroker
     volumes:
@@ -154,8 +157,9 @@ services:
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
       - FIREBASE_CREDENTIALS_JSON_COMMENT=${FIREBASE_CREDENTIALS_JSON_COMMENT}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - Redis:ConnectionString=redis:6379
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
     depends_on:
       - redis
     volumes:
@@ -182,7 +186,8 @@ services:
       - VnPay:HashSecret=${VNPAY_HASH_SECRET}
       - MoMo:SecretKey=${MOMO_SECRET_KEY}
       - PayPal:SecretKey=${PAYPAL_SECRET_KEY}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
     depends_on:
       - messagebroker
       - redis
@@ -191,3 +196,42 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+    depends_on:
+      - jaeger
+      - loki
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+

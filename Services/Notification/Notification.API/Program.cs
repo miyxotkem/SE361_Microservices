@@ -11,6 +11,9 @@ using BuildingBlocks.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add OpenTelemetry Logging
+builder.Logging.AddOpenTelemetryLogging(builder.Configuration);
+
 // Add OpenTelemetry Tracing
 builder.Services.AddOpenTelemetryTracing(builder.Configuration, "Notification.API");
 
