@@ -37,6 +37,7 @@ namespace BuildingBlocks.Diagnostics
                     metrics
                         .AddAspNetCoreInstrumentation() // HTTP incoming request metrics
                         .AddHttpClientInstrumentation() // HTTP outgoing request metrics
+                        .AddRuntimeInstrumentation()    // .NET Runtime metrics (GC, Memory, ThreadPool)
                         .AddOtlpExporter(options =>
                         {
                             options.Endpoint = new Uri(otlpEndpoint);
