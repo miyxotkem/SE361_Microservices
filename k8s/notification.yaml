@@ -18,7 +18,7 @@ spec:
         - name: ghcr-io-registry-key
       containers:
         - name: notification-api
-          image: ghcr.io/username/smartedu-notification:latest # Placeholder, updated during CD
+          image: ghcr.io/miyxotkem/se361_microservices/smartedu-notification:latest # Placeholder, updated during CD
           ports:
             - containerPort: 8080
               name: http

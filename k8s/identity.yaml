@@ -18,7 +18,7 @@ spec:
         - name: ghcr-io-registry-key
       containers:
         - name: identity-api
-          image: ghcr.io/username/smartedu-identity:latest # Placeholder, updated during CD
+          image: ghcr.io/miyxotkem/se361_microservices/smartedu-identity:latest # Placeholder, updated during CD
           ports:
             - containerPort: 8080
               name: http
