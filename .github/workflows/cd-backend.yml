@@ -8,6 +8,7 @@ on:
       - 'Services/**'
       - 'BuildingBlocks/**'
       - 'ApiGateways/**'
+      - 'k8s/**'
       - '.github/workflows/cd-backend.yml'
 
 permissions:
@@ -41,6 +42,7 @@ jobs:
               - 'BuildingBlocks/**'
             workflow:
               - '.github/workflows/cd-backend.yml'
+              - 'k8s/**'
             gateway:
               - 'ApiGateways/YarpApiGateway/**'
             identity:
