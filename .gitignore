@@ -3,3 +3,4 @@ bin/
 obj/
 firebase/*.json
 .env
+k8s/secrets.local.yaml

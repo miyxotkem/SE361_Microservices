@@ -1,0 +1,20 @@
+@baseUrl = https://smartedu-gateway.purplegrass-24659ed3.southeastasia.azurecontainerapps.io
+
+### 1. Đăng ký tài khoản Test mới
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "student_test@gmail.com",
+  "password": "Password123!",
+  "fullName": "Student Test"
+}
+
+### 2. Đăng nhập bằng Email và Password
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "student_test@gmail.com",
+  "password": "Password123!"
+}

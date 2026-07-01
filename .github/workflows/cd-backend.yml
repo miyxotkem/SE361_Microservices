@@ -96,15 +96,21 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Container Apps
-        uses: azure/container-apps-deploy-action@v2
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
         with:
-          imageToDeploy: ghcr.io/${{ env.REPO_LOWER }}/smartedu-gateway:${{ github.sha }}
-          containerAppName: smartedu-gateway
-          resourceGroup: SmartEdu-RG
-          registryUrl: ghcr.io
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          resource-group: SmartEdu-RG
+          cluster-name: smartedu-cluster
+
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            k8s/gateway.yaml
+          images: |
+            ghcr.io/${{ env.REPO_LOWER }}/smartedu-gateway:${{ github.sha }}
+          imagepullsecrets: |
+            ghcr-io-registry-key
 
   build-and-deploy-identity:
     name: Build & Deploy Identity
@@ -146,15 +152,21 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Container Apps
-        uses: azure/container-apps-deploy-action@v2
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
         with:
-          imageToDeploy: ghcr.io/${{ env.REPO_LOWER }}/smartedu-identity:${{ github.sha }}
-          containerAppName: smartedu-identity
-          resourceGroup: SmartEdu-RG
-          registryUrl: ghcr.io
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          resource-group: SmartEdu-RG
+          cluster-name: smartedu-cluster
+
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            k8s/identity.yaml
+          images: |
+            ghcr.io/${{ env.REPO_LOWER }}/smartedu-identity:${{ github.sha }}
+          imagepullsecrets: |
+            ghcr-io-registry-key
 
   build-and-deploy-course:
     name: Build & Deploy Course
@@ -196,15 +208,21 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Container Apps
-        uses: azure/container-apps-deploy-action@v2
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
         with:
-          imageToDeploy: ghcr.io/${{ env.REPO_LOWER }}/smartedu-course:${{ github.sha }}
-          containerAppName: smartedu-course
-          resourceGroup: SmartEdu-RG
-          registryUrl: ghcr.io
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          resource-group: SmartEdu-RG
+          cluster-name: smartedu-cluster
+
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            k8s/course.yaml
+          images: |
+            ghcr.io/${{ env.REPO_LOWER }}/smartedu-course:${{ github.sha }}
+          imagepullsecrets: |
+            ghcr-io-registry-key
 
   build-and-deploy-exam:
     name: Build & Deploy Exam
@@ -246,15 +264,21 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Container Apps
-        uses: azure/container-apps-deploy-action@v2
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
         with:
-          imageToDeploy: ghcr.io/${{ env.REPO_LOWER }}/smartedu-exam:${{ github.sha }}
-          containerAppName: smartedu-exam
-          resourceGroup: SmartEdu-RG
-          registryUrl: ghcr.io
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          resource-group: SmartEdu-RG
+          cluster-name: smartedu-cluster
+
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            k8s/exam.yaml
+          images: |
+            ghcr.io/${{ env.REPO_LOWER }}/smartedu-exam:${{ github.sha }}
+          imagepullsecrets: |
+            ghcr-io-registry-key
 
   build-and-deploy-notification:
     name: Build & Deploy Notification
@@ -296,15 +320,21 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Container Apps
-        uses: azure/container-apps-deploy-action@v2
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
         with:
-          imageToDeploy: ghcr.io/${{ env.REPO_LOWER }}/smartedu-notification:${{ github.sha }}
-          containerAppName: smartedu-notification
-          resourceGroup: SmartEdu-RG
-          registryUrl: ghcr.io
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          resource-group: SmartEdu-RG
+          cluster-name: smartedu-cluster
+
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            k8s/notification.yaml
+          images: |
+            ghcr.io/${{ env.REPO_LOWER }}/smartedu-notification:${{ github.sha }}
+          imagepullsecrets: |
+            ghcr-io-registry-key
 
   build-and-deploy-comment:
     name: Build & Deploy Comment
@@ -346,15 +376,21 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Container Apps
-        uses: azure/container-apps-deploy-action@v2
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
         with:
-          imageToDeploy: ghcr.io/${{ env.REPO_LOWER }}/smartedu-comment:${{ github.sha }}
-          containerAppName: smartedu-comment
-          resourceGroup: SmartEdu-RG
-          registryUrl: ghcr.io
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          resource-group: SmartEdu-RG
+          cluster-name: smartedu-cluster
+
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            k8s/comment.yaml
+          images: |
+            ghcr.io/${{ env.REPO_LOWER }}/smartedu-comment:${{ github.sha }}
+          imagepullsecrets: |
+            ghcr-io-registry-key
 
   build-and-deploy-payment:
     name: Build & Deploy Payment
@@ -396,12 +432,18 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Container Apps
-        uses: azure/container-apps-deploy-action@v2
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
         with:
-          imageToDeploy: ghcr.io/${{ env.REPO_LOWER }}/smartedu-payment:${{ github.sha }}
-          containerAppName: smartedu-payment
-          resourceGroup: SmartEdu-RG
-          registryUrl: ghcr.io
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GITHUB_TOKEN }}
+          resource-group: SmartEdu-RG
+          cluster-name: smartedu-cluster
+
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            k8s/payment.yaml
+          images: |
+            ghcr.io/${{ env.REPO_LOWER }}/smartedu-payment:${{ github.sha }}
+          imagepullsecrets: |
+            ghcr-io-registry-key
