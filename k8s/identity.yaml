@@ -49,6 +49,8 @@ spec:
                 secretKeyRef:
                   name: smartedu-secrets
                   key: JWT_AUDIENCE
+            - name: Redis__ConnectionString
+              value: "redis:6379"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://jaeger:4317"
           livenessProbe:

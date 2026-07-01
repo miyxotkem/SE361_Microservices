@@ -51,6 +51,8 @@ spec:
                 secretKeyRef:
                   name: smartedu-secrets
                   key: FIREBASE_CREDENTIALS_JSON_NOTIFICATION
+            - name: Redis__ConnectionString
+              value: "redis:6379"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://jaeger:4317"
           livenessProbe:
