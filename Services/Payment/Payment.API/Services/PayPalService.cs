@@ -54,8 +54,8 @@ namespace Payment.API.Services
             // PayPal appends token (orderId) and PayerID to this URL
             var successUrl = returnUrl != null 
                 ? $"{returnUrl}?transactionId={transactionId}" 
-                : $"http://localhost:7000/api/payment/paypal/return?transactionId={transactionId}";
-            var cancelUrl = "http://localhost:7000/api/payment/paypal/cancel";
+                : $"http://20.247.226.105:7000/api/payment/paypal/return?transactionId={transactionId}";
+            var cancelUrl = "http://20.247.226.105:7000/api/payment/paypal/cancel";
 
             var orderPayload = new
             {

@@ -74,7 +74,7 @@ namespace e_learning_app.Views
                 if (currentUser == null) return;
 
                 _hubConnection = new HubConnectionBuilder()
-                    .WithUrl($"http://localhost:7000/course-api/hubs/enrollment?userId={currentUser.Id}")
+                    .WithUrl($"http://20.247.226.105:7000/course-api/hubs/enrollment?userId={currentUser.Id}")
                     .WithAutomaticReconnect()
                     .Build();
 
