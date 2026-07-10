@@ -6,6 +6,7 @@ using MediatR;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Identity.API.Features.Users.DeleteUser
 {
@@ -14,10 +15,12 @@ namespace Identity.API.Features.Users.DeleteUser
     public class DeleteUserCommandHandler : ICommandHandler<DeleteUserCommand, IResult>
     {
         private readonly IdentityDbContext _context;
+        private readonly IDistributedCache _cache;
 
-        public DeleteUserCommandHandler(IdentityDbContext context)
+        public DeleteUserCommandHandler(IdentityDbContext context, IDistributedCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         public async Task<IResult> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
@@ -27,6 +30,8 @@ namespace Identity.API.Features.Users.DeleteUser
 
             _context.Users.Remove(user);
             await _context.SaveChangesAsync(cancellationToken);
+
+            await _cache.RemoveAsync("GetAllUsers", cancellationToken);
 
             return Results.Ok(new { Message = "User deleted successfully" });
         }

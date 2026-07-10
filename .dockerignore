@@ -1,0 +1,20 @@
+.dockerignore
+.env
+.git
+.gitignore
+.vs
+.vscode
+.idea
+*/bin/
+*/obj/
+*/*/bin/
+*/*/obj/
+*/*/*/bin/
+*/*/*/obj/
+*/*/*/*/bin/
+*/*/*/*/obj/
+tests/
+vnpay-test/
+e-learning app.sln
+e-learning app.csproj
+e-learning app.csproj.user

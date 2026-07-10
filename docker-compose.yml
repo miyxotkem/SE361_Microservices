@@ -32,11 +32,15 @@ services:
       - OTEL_TRACE_SAMPLING_RATIO=1.0
     depends_on:
       - identity.api
-      - course.api
-      - exam.api
+      - course.api.1
+      - course.api.2
+      - course.api.3
+      - exam.api.1
+      - exam.api.2
       - notification.api
       - comment.api
       - payment.api
+      - admin.api
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -68,7 +72,8 @@ services:
       timeout: 10s
       retries: 3
 
-  course.api:
+  # ─── COURSE SERVICE: 3 REPLICAS (Horizontal Scaling) ────────────────────────
+  course.api.1:
     image: smartedu-course
     build:
       context: .
@@ -83,8 +88,10 @@ services:
       - FIREBASE_CREDENTIALS_JSON_COURSE=${FIREBASE_CREDENTIALS_JSON_COURSE}
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - OTEL_TRACE_SAMPLING_RATIO=1.0
+      - INSTANCE_ID=course-1
     depends_on:
       - messagebroker
+      - redis
     volumes:
       - ./firebase:/app/firebase
     healthcheck:
@@ -93,7 +100,62 @@ services:
       timeout: 10s
       retries: 3
 
-  exam.api:
+  course.api.2:
+    image: smartedu-course
+    build:
+      context: .
+      dockerfile: Services/Course/Course.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MessageBroker:Host=rabbitmq://messagebroker
+      - Redis:ConnectionString=redis:6379
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
+      - FIREBASE_CREDENTIALS_JSON_COURSE=${FIREBASE_CREDENTIALS_JSON_COURSE}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
+      - INSTANCE_ID=course-2
+    depends_on:
+      - messagebroker
+      - redis
+    volumes:
+      - ./firebase:/app/firebase
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  course.api.3:
+    image: smartedu-course
+    build:
+      context: .
+      dockerfile: Services/Course/Course.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MessageBroker:Host=rabbitmq://messagebroker
+      - Redis:ConnectionString=redis:6379
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
+      - FIREBASE_CREDENTIALS_JSON_COURSE=${FIREBASE_CREDENTIALS_JSON_COURSE}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
+      - INSTANCE_ID=course-3
+    depends_on:
+      - messagebroker
+      - redis
+    volumes:
+      - ./firebase:/app/firebase
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── EXAM SERVICE: 2 REPLICAS (Horizontal Scaling) ──────────────────────────
+  exam.api.1:
     image: smartedu-exam
     build:
       context: .
@@ -101,7 +163,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
-      - GrpcSettings:CourseUrl=http://course.api:8081
+      - GrpcSettings:CourseUrl=http://course.api.1:8081
       - GrpcSettings:IdentityUrl=http://identity.api:8081
       - Jwt:Key=${JWT_KEY}
       - Jwt:Issuer=${JWT_ISSUER}
@@ -110,6 +172,36 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - Redis:ConnectionString=redis:6379
       - OTEL_TRACE_SAMPLING_RATIO=1.0
+      - INSTANCE_ID=exam-1
+    depends_on:
+      - messagebroker
+      - redis
+    volumes:
+      - ./firebase:/app/firebase
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  exam.api.2:
+    image: smartedu-exam
+    build:
+      context: .
+      dockerfile: Services/Exam/Exam.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MessageBroker:Host=rabbitmq://messagebroker
+      - GrpcSettings:CourseUrl=http://course.api.1:8081
+      - GrpcSettings:IdentityUrl=http://identity.api:8081
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
+      - FIREBASE_CREDENTIALS_JSON_EXAM=${FIREBASE_CREDENTIALS_JSON_EXAM}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - Redis:ConnectionString=redis:6379
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
+      - INSTANCE_ID=exam-2
     depends_on:
       - messagebroker
       - redis
@@ -129,7 +221,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - MessageBroker:Host=rabbitmq://messagebroker
-      - GrpcSettings:CourseUrl=http://course.api:8081
+      - GrpcSettings:CourseUrl=http://course.api.1:8081
       - Jwt:Key=${JWT_KEY}
       - Jwt:Issuer=${JWT_ISSUER}
       - Jwt:Audience=${JWT_AUDIENCE}
@@ -197,14 +289,35 @@ services:
       timeout: 10s
       retries: 3
 
+  admin.api:
+    image: smartedu-admin
+    build:
+      context: .
+      dockerfile: Services/Admin/Admin.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MessageBroker:Host=rabbitmq://messagebroker
+      - Jwt:Key=${JWT_KEY}
+      - Jwt:Issuer=${JWT_ISSUER}
+      - Jwt:Audience=${JWT_AUDIENCE}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_TRACE_SAMPLING_RATIO=1.0
+    depends_on:
+      - messagebroker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
     ports:
-      - "4317:4317" # OTLP gRPC receiver
-      - "4318:4318" # OTLP HTTP receiver
+      - "4317:4317"
+      - "4318:4318"
     depends_on:
       - jaeger
       - loki
@@ -234,4 +347,3 @@ services:
       - prometheus
       - loki
       - jaeger
-

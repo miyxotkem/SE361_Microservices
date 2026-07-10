@@ -1,6 +1,7 @@
 using BuildingBlocks.CQRS;
 using Google.Cloud.Firestore;
 using MediatR;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Course.API.Features.Courses.DeleteCourse
 {
@@ -9,10 +10,12 @@ namespace Course.API.Features.Courses.DeleteCourse
     public class DeleteCourseCommandHandler : ICommandHandler<DeleteCourseCommand, IResult>
     {
         private readonly FirestoreDb _firestoreDb;
+        private readonly IDistributedCache _cache;
 
-        public DeleteCourseCommandHandler(FirestoreDb firestoreDb)
+        public DeleteCourseCommandHandler(FirestoreDb firestoreDb, IDistributedCache cache)
         {
             _firestoreDb = firestoreDb;
+            _cache = cache;
         }
 
         public async Task<IResult> Handle(DeleteCourseCommand request, CancellationToken cancellationToken)
@@ -34,6 +37,8 @@ namespace Course.API.Features.Courses.DeleteCourse
             }
 
             await docRef.DeleteAsync(cancellationToken: cancellationToken);
+            await _cache.RemoveAsync("all_courses", cancellationToken);
+            
             return Results.Ok(new { Message = "Course deleted successfully." });
         }
     }

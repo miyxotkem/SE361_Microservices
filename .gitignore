@@ -4,3 +4,5 @@ obj/
 firebase/*.json
 .env
 k8s/secrets.local.yaml
+WebAPI_E_learning/firebase/firebase_json.json
+firebase/d41d8cd9.env

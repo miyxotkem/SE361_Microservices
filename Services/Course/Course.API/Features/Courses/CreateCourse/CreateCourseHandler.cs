@@ -2,6 +2,7 @@ using BuildingBlocks.CQRS;
 using Course.API.Models;
 using Google.Cloud.Firestore;
 using MediatR;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Course.API.Features.Courses.CreateCourse
 {
@@ -10,10 +11,12 @@ namespace Course.API.Features.Courses.CreateCourse
     public class CreateCourseCommandHandler : ICommandHandler<CreateCourseCommand, IResult>
     {
         private readonly FirestoreDb _firestoreDb;
+        private readonly IDistributedCache _cache;
 
-        public CreateCourseCommandHandler(FirestoreDb firestoreDb)
+        public CreateCourseCommandHandler(FirestoreDb firestoreDb, IDistributedCache cache)
         {
             _firestoreDb = firestoreDb;
+            _cache = cache;
         }
 
         public async Task<IResult> Handle(CreateCourseCommand request, CancellationToken cancellationToken)
@@ -51,6 +54,8 @@ namespace Course.API.Features.Courses.CreateCourse
             {
                 docRef = await _firestoreDb.Collection("Courses").AddAsync(courseData, cancellationToken: cancellationToken);
             }
+
+            await _cache.RemoveAsync("all_courses", cancellationToken);
 
             return Results.Ok(new { Message = "Course created successfully.", Id = docRef.Id });
         }

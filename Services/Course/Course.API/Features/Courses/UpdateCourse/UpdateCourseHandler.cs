@@ -2,6 +2,7 @@ using BuildingBlocks.CQRS;
 using Google.Cloud.Firestore;
 using MediatR;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Course.API.Features.Courses.UpdateCourse
 {
@@ -10,10 +11,12 @@ namespace Course.API.Features.Courses.UpdateCourse
     public class UpdateCourseCommandHandler : ICommandHandler<UpdateCourseCommand, IResult>
     {
         private readonly FirestoreDb _firestoreDb;
+        private readonly IDistributedCache _cache;
 
-        public UpdateCourseCommandHandler(FirestoreDb firestoreDb)
+        public UpdateCourseCommandHandler(FirestoreDb firestoreDb, IDistributedCache cache)
         {
             _firestoreDb = firestoreDb;
+            _cache = cache;
         }
 
         public async Task<IResult> Handle(UpdateCourseCommand request, CancellationToken cancellationToken)
@@ -69,6 +72,8 @@ namespace Course.API.Features.Courses.UpdateCourse
                 updates["UpdatedAt"] = DateTime.UtcNow;
                 await docRef.UpdateAsync(updates, cancellationToken: cancellationToken);
             }
+
+            await _cache.RemoveAsync("all_courses", cancellationToken);
 
             return Results.Ok(new { Message = "Course updated successfully." });
         }
