@@ -152,7 +152,22 @@ If you would like to contribute:
 
 ## 👨‍💻 Team & Collaborators
 
-**Thinh Phat Ho**
+**Võ Tấn Nhã**  
+*Software Engineering Student @ UIT*
+* **GitHub:** [@nha-blip](https://github.com/nha-blip)
+* **Focus:** Full-Stack .NET, System Architecture & API Design
+
+**Thinh Phat Ho**  
 *Software Engineering Student @ UIT*
 * **GitHub:** [@miyxotkem](https://github.com/miyxotkem)
-* **Focus:** Full-Stack .NET, Microservices Architecture & API Design
+* **Focus:** Full-Stack .NET, System Architecture & API Design
+
+**Đinh Quang Nhật**  
+*Software Engineering Student @ UIT*
+* **GitHub:** [@PeterBrr](https://github.com/PeterBrr)
+* **Focus:** Full-Stack .NET, System Architecture & API Design
+
+**innguyen**  
+*Software Engineering Student @ UIT*
+* **GitHub:** [@innguyen](https://github.com/innguyen)
+* **Focus:** Full-Stack .NET, System Architecture & API Design
