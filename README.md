@@ -110,7 +110,7 @@
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/miyxotkem/SE361_Microservices.git
+   git clone https://github.com/miyxotkem/SE361_SmartEduMicroservices.git
    ```
 
 2. **Start supporting infrastructure:**
