@@ -1,6 +1,6 @@
 <!-- HEADER BANNER -->
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:11998e,100:38ef7d&height=200&section=header&text=🎓%20SmartEdu%20Microservices&fontSize=48&fontColor=ffffff&desc=Cloud-Native%20E-Learning%20Platform%20on%20.NET%209&descAlignY=75" width="100%" alt="SmartEdu Microservices Banner" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:11998e,100:38ef7d&height=200&section=header&text=🎓%20SmartEdu%20Microservices&fontSize=48&fontColor=ffffff&desc=Cloud-Native%20E-Learning%20Platform%20on%20.NET%209&descAlignY=75" width="100%" alt="Banner" />
 </p>
 
 <p align="center">
